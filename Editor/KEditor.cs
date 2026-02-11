@@ -1,5 +1,6 @@
 using SFML.Graphics;
 using SFML.System;
+using SFML.Window;
 
 public delegate void PaletteHandler(ref KTexturePalette palette);
 
@@ -13,7 +14,10 @@ public struct KTexturePalette
 
     public event PaletteHandler? PaletteUpdated;
 
-    public KTexturePalette(Texture atlas)
+    public KTexturePalette(Texture atlas) =>
+        Init(atlas);
+
+    public void Init(Texture atlas)
     {
         Enabled = false;
         BackgroundColor = new(100, 100, 100);
@@ -34,7 +38,7 @@ public struct KTexturePalette
         renderer.DrawRect(new FloatRect(Position, (Vector2f)Texture.Size), BackgroundColor, layer);
         renderer.DrawRect(
             new FloatRect(Position, (Vector2f)Texture.Size), 
-            new FloatRect(Position, (Vector2f)Texture.Size), Color.White, 1);
+            new FloatRect(Position, (Vector2f)Texture.Size), Color.White, layer);
     }
 
     public void DrawBuffer(Vertex[] vertices, uint vCount, PrimitiveType primitive, RenderStates states)
@@ -57,6 +61,7 @@ public enum KEditorTool
 
 public struct KTileMap
 {
+    public bool Enabled;
     public KGrid Grid;
     public FloatRect[] TileSet;
     public Vertex[] Buffer;
@@ -70,7 +75,6 @@ public struct KTileMap
 
     public Vertex[] BakeVertices()
     {
-        Console.WriteLine(Grid.CellCount);
         for (int i = 0; i < Grid.CellCount; i++)
         { 
             Color color;
@@ -116,7 +120,9 @@ public struct KTileMap
 
 public class KEditor
 {
-    public const int EDITOR_LAYER = 1;
+    public const int EDITOR_LAYER = 0;
+    public const int LINE_LAYER = 0;
+
     public const int TILE_SIZE = 4;
 
     private KEditorTool _currentTool;
@@ -130,64 +136,6 @@ public class KEditor
 
     public KEditor()
     {
-        Grid = new(); 
-        TileMap = new();
-        Palette = new();
-        _mousePos = (0, 0);
-        _currentTool = KEditorTool.CURSOR;
-    }
-
-    public void Init(KTextureAtlas atlas, RenderWindow window, KRenderer renderer)
-    {
-        Palette = new()
-        {
-            Enabled = false,
-        };
-
-        window.SetKeyRepeatEnabled(false);
-        window.MouseMoved += (_, e) => _mousePos = e.Position;
-        window.MouseButtonPressed += (_, e) => 
-        {
-            var index = Grid.CoordsToIndex(
-                (_mousePos.X, _mousePos.Y), 
-                1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[1].Resolution.X));
-
-            Console.WriteLine(index);
-        };
-        window.KeyPressed += (_, e) =>
-        {
-            if (e.Code == SFML.Window.Keyboard.Key.Q)
-            {
-                Palette.Enabled = !Palette.Enabled;
-            }  
-        };
-
-        var bufferRegions = KRenderer.CreateBufferRegions([60000, 60000, 60000]);
-
-        KDrawLayer[] drawLayers =
-        [
-            new() 
-            {
-                IsStatic = false,
-                Upscale = true,
-                Resolution = (320, 240),
-                Primitive = PrimitiveType.Lines,
-                States = RenderStates.Default,
-                Region = bufferRegions[0],    
-            },
-            new() 
-            {
-                IsStatic = false,
-                Upscale = true,
-                Resolution = (320, 240),
-                Primitive = PrimitiveType.Triangles,
-                States = new(atlas.Texture),
-                Region = bufferRegions[1],    
-            }
-        ];
-
-        renderer.Init(bufferRegions[1], drawLayers);
-
         Grid = new()
         {
             Enabled = true,
@@ -196,37 +144,87 @@ public class KEditor
             LineColor = Color.Green,
             Position = (0, 0),
             CellSize = (TILE_SIZE, TILE_SIZE),
-        }; 
-
+        };  
         TileMap = new(Grid, [], EDITOR_LAYER);
+        Palette = new();
+        _mousePos = (0, 0);
+        _currentTool = KEditorTool.CURSOR;
+    }
+
+    public void Init(RenderWindow window, KRenderer renderer)
+    {
+        const int DEFAULT_ATLAS = 0;
+
+        Palette.Init(KProgram.Atlases[DEFAULT_ATLAS].Texture);
+
+        window.SetKeyRepeatEnabled(false);
+        window.MouseMoved += HandleMouseInput;
+        window.MouseButtonPressed += HandleMouseInput;
+        window.KeyPressed += HandleKeyInput;
         TileMap.BakeVertices();
     }
 
-    public void UnInit()
+    public void Deinit(RenderWindow window)
+    {
+        window.MouseMoved -= HandleMouseInput;
+        window.MouseButtonPressed -= HandleMouseInput;
+        window.KeyPressed -= HandleKeyInput;
+    }
+
+    public void Update(uint currentFrame)
     {
         
     }
 
-    public void Update()
-    {
-        
-    }
-
-    public void FrameUpdate(KRenderer renderer, uint currentFrame)
+    public void FrameUpdate(uint currentFrame, KRenderer renderer)
     {
         ref var layer = ref renderer.DrawLayers[EDITOR_LAYER];
 
-        TileMap.FrameUpdate(renderer, EDITOR_LAYER);
+        if (TileMap.Enabled) TileMap.FrameUpdate(renderer, EDITOR_LAYER);
 
         if (Grid.Enabled)
         {
-            Grid.Draw(renderer, 0);
+            if (Palette.Enabled) Palette.FrameUpdate(renderer, EDITOR_LAYER);
+
+            Grid.Draw(renderer, 1);
 
             var index = Grid.CoordsToIndex(
                 (_mousePos.X, _mousePos.Y), 
-                1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[1].Resolution.X));
+                1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[0].Resolution.X));
 
             renderer.DrawRect(new FloatRect(Grid.IndexToCoords(index), (TILE_SIZE, TILE_SIZE)), new(255, 255, 0, 150), EDITOR_LAYER);
+        }
+    }
+
+    public void HandleMouseInput(object? obj, MouseMoveEventArgs args)
+    {
+        //not a fan of closure classes.
+        _mousePos = args.Position;
+    }
+
+    public void HandleMouseInput(object? obj, MouseButtonEventArgs args)
+    {
+        if (args.Button == Mouse.Button.Left && Palette.Enabled)
+        {
+            
+        }
+        
+    }
+
+    public void HandleKeyInput(object? obj, KeyEventArgs args)
+    {
+        switch (args.Code)
+        {
+            case Keyboard.Key.Q:
+                Palette.Enabled = !Palette.Enabled;
+                break;
+
+            case Keyboard.Key.E:
+                TileMap.Enabled = !TileMap.Enabled; 
+                break;
+            
+            default:
+                break;
         }
     }
 }

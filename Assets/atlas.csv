@@ -13,8 +13,8 @@ sprite,sword,36,0,4,4
 sprite,button,40,0,4,4
 
 sprite,floor,0,4,4,4
-sprite,pit0,0,8,4,4
-sprite,pit1,0,12,4,4
+sprite,pit,0,8,4,4
+sprite,void,0,12,4,4
 
 sprite,wall_tl,4,4,4,4
 sprite,wall_t,8,4,4,4

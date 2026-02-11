@@ -39,8 +39,8 @@ public struct KGrid
         ref var l = ref renderer.DrawLayers[lineLayer];
         
         uint vCount = 0;
-        int rows = (int) l.Resolution.Y / 4;
-        int columns = (int) l.Resolution.X / 4;
+        int columns = (int) l.Resolution.X / CellSize.X;
+        int rows = (int) l.Resolution.Y / CellSize.Y;
         var buffer = ArrayPool<Vertex>.Shared.Rent(rows * 2 + columns * 2);
 
         for (int i = 0; i < rows; i++)
@@ -56,7 +56,7 @@ public struct KGrid
             vCount += 2;
         }
 
-        renderer.DrawBuffer(buffer, vCount, 0);
+        renderer.DrawBuffer(buffer, vCount, lineLayer);
 
         ArrayPool<Vertex>.Shared.Return(buffer);
     }
@@ -89,7 +89,7 @@ public struct KGameMap
 }
 
 
-public class KGame
+public class KGame 
 {
     public KGameMap GameMap;
 
@@ -104,12 +104,17 @@ public class KGame
         };
     }
 
+    public void Init()
+    {
+        
+    }
+
     public void Update(uint currentFrame)
     {
         
     }
 
-    public void FrameUpdate(uint currentFrame)
+    public void FrameUpdate(uint currentFrame, KRenderer renderer)
     {
         
     }

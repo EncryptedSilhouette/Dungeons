@@ -2,47 +2,9 @@ using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 
-public struct KBufferRegion
-{
-    public uint Offset;
-    public uint Count;
-    public uint Capacity;
-}
-
-public class KDrawLayer
-{
-    public bool IsStatic;
-    public bool Upscale;
-    public Vector2u Resolution;
-    public PrimitiveType Primitive;
-    public RenderStates States;
-    public KBufferRegion Region;
-    public KTextureAtlas TextureAtlas;
-}
-
 public class KRenderer
 {
     public const int SCREEN_LAYER = -1;
-
-    #region static
-    public static KBufferRegion[] CreateBufferRegions(uint[] bufferSizes)
-    {
-        uint offset = 0;
-        var regions = new KBufferRegion[bufferSizes.Length];
-
-        for (int i = 0; i < regions.Length; i++)
-        {
-            regions[i] = new()
-            {
-                Offset = offset,
-                Count = 0,
-                Capacity = bufferSizes[i]
-            };
-            offset += bufferSizes[i];
-        }
-        return regions;
-    } 
-    #endregion
 
     private View _view;
     private Vertex[] _drawBuffer;
@@ -166,13 +128,13 @@ public class KRenderer
     public void DrawRect(Vector2f position, Vector2f size, Color color, int layer = SCREEN_LAYER) => 
         DrawRect(new FloatRect(position, size), color, layer);
 
-    public void ResizeBuffer(uint size, PrimitiveType primitive)
+    public VertexBuffer ResizeBuffer(uint size, PrimitiveType primitive = PrimitiveType.Points)
     {
         VertexBuffer newBuffer = new(size, primitive, VertexBuffer.UsageSpecifier.Stream);
         newBuffer.Update(VertexBuffer);
 
         VertexBuffer.Dispose();
-        VertexBuffer = newBuffer;
+        return VertexBuffer = newBuffer;
     }
 
     private void ResizeView(object? _, SizeEventArgs e)
