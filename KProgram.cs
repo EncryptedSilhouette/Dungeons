@@ -29,7 +29,7 @@ public class KProgram
         Window.SetFramerateLimit(FRAME_RATE);
         Window.Closed += (_, _) => Running = false;
 
-        Renderer = new(Window, new(12000, PrimitiveType.Triangles, VertexBuffer.UsageSpecifier.Dynamic));
+        Renderer = new(Window, new(180000, PrimitiveType.Triangles, VertexBuffer.UsageSpecifier.Dynamic));
         Editor = new();
         Game = new();
         Atlases = [];
@@ -133,39 +133,43 @@ public class KProgram
                     break;
             }
 
-            if (atlas.Texture is null)
-            {
-                Color color = new(0,0,0);
-                Image img = new((480,640));
-
-                for (uint i = 0; i < 480; i++)
-                {
-                    for (uint j = 0; j < 640; j++)
-                    {
-                        if (color.R + 1 > byte.MaxValue)
-                        {
-                            color.R = 0;
-
-                            if (color.G + 1 > byte.MaxValue)
-                            {
-                                color.G = 0;
-
-                                if (color.B + 1 > byte.MaxValue)
-                                {
-                                    color.B = 0;
-                                }
-                                else color.B++;
-                            }
-                            else color.G++;
-                        }
-                        else color.R++;
-
-                        img.SetPixel(new Vector2u(i, j), color);
-                    }
-                }
-                atlas.Texture = new(img);
-            }
+            if (atlas.Texture is null) atlas.Texture = CreateErrorTexture(640, 480);
         }
         return atlas;
+    }
+
+    public static Texture CreateErrorTexture(uint width, uint height)
+    {
+        Color color = new(0,0,0);
+        Image img = new((width, height));
+
+        for (uint i = 0; i < height; i++)
+        {
+            for (uint j = 0; j < width; j++)
+            {
+                if (color.R + 1 > byte.MaxValue)
+                {
+                    color.R = 0;
+
+                    if (color.G + 1 > byte.MaxValue)
+                    {
+                        color.G = 0;
+
+                        if (color.B + 1 > byte.MaxValue)
+                        {
+                            color.B = 0;
+                        }
+                        else color.B++;
+                    }
+                    else color.G++;
+                }
+                else color.R++;
+
+                img.SetPixel(new Vector2u(i, j), color);
+            }
+        }
+
+        img.SetPixel(new Vector2u(0, 0), Color.White);
+        return new(img);
     }
 }

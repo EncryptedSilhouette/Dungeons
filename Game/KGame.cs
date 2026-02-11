@@ -11,14 +11,16 @@ public struct KGrid
     public Color LineColor;
     public Vector2f Position;
     public Vector2i CellSize;
-    public uint[] Tiles;
+    public uint[] Cells;
+
+    public int CellCount => Rows * Columns;
 
     public KGrid()
     {
         Enabled = true;
         Rows = Columns = CellSize.X = CellSize.Y = 0;
         LineColor = Color.White;
-        Tiles = [];
+        Cells = [];
     }
 
     public KGrid(int rows, int columns, int x, int y, int cellWidth, int cellHeight)
@@ -29,7 +31,7 @@ public struct KGrid
         CellSize.X = cellWidth;
         CellSize.Y = cellHeight;
         Position = (x, y);
-        Tiles = new uint[Rows * Columns];
+        Cells = new uint[Rows * Columns];
     }
 
     public void Draw(KRenderer renderer, int lineLayer)
@@ -59,9 +61,26 @@ public struct KGrid
         ArrayPool<Vertex>.Shared.Return(buffer);
     }
 
-    public Vector2i PointToCell(Vector2f pos) => 
-        new((int)((pos.X - Position.X) / CellSize.X) * CellSize.X, 
-            (int)((pos.Y - Position.Y) / CellSize.X) * CellSize.Y);
+    public int PositionToIndex(int column, int row) => column + row * Columns;
+    public (int, int) IndexToPosition(int index) => (index % Columns, index / Columns);
+
+    public int CoordsToIndex(Vector2f pos, float scale = 1)
+    {
+        pos -= Position * scale;
+        int column = (int)(pos.X / CellSize.X * scale);
+        int row = (int)(pos.Y / CellSize.Y * scale);
+
+        return PositionToIndex(column, row);   
+    }
+
+    public Vector2f IndexToCoords(int index, float scale = 1)
+    {
+        return new()
+        {
+            X = Position.X + (int)(index % Columns) * CellSize.X * scale,
+            Y = Position.Y + (int)(index / Columns) * CellSize.Y * scale,
+        };
+    }
 }
 
 public struct KGameMap
