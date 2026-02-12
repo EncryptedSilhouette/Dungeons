@@ -24,16 +24,16 @@ public class KRenderer
         _drawBuffer = new Vertex[6];
 
         Window = window;
-        VertexBuffer =  buffer;
+        VertexBuffer = buffer;
         DrawLayers = [];
-
-        window.Resized += ResizeView;
     }
 
     public void Init(KBufferRegion screenRegion, KDrawLayer[] drawLayers)
     {
         ScreenRegion = screenRegion;
         DrawLayers = drawLayers;
+
+        Window.Resized += ResizeView;
     }
 
     public void FrameUpdate()

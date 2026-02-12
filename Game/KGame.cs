@@ -32,6 +32,7 @@ public struct KGrid
         CellSize.Y = cellHeight;
         Position = (x, y);
         Cells = new uint[Rows * Columns];
+        Array.Fill<uint>(Cells, 0);
     }
 
     public void Draw(KRenderer renderer, int lineLayer)

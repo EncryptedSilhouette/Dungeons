@@ -14,8 +14,20 @@ public struct KTexturePalette
 
     public event PaletteHandler? PaletteUpdated;
 
-    public KTexturePalette(Texture atlas) =>
-        Init(atlas);
+    public KTexturePalette(Texture atlas)
+    {
+        Enabled = false;
+        BackgroundColor = new(100, 100, 100);
+        Position = (0, 0);
+
+        Texture = atlas;
+        RenderTexture = new(atlas.Size);
+        RenderTexture.Clear(BackgroundColor);
+        RenderTexture.Draw(new Sprite(atlas));
+        RenderTexture.Display();
+        
+        PaletteUpdated += (ref pal) => pal.Texture = pal.RenderTexture.Texture;
+    }
 
     public void Init(Texture atlas)
     {
@@ -23,14 +35,10 @@ public struct KTexturePalette
         BackgroundColor = new(100, 100, 100);
         Position = (0, 0);
 
+        Texture = atlas;
         RenderTexture = new(atlas.Size);
-        RenderTexture.Clear(BackgroundColor);
-        RenderTexture.Draw(new RectangleShape((Vector2f)atlas.Size), new(atlas));
+        RenderTexture.Draw(new Sprite(atlas));
         RenderTexture.Display();
-        
-        Texture = RenderTexture.Texture;
-
-        PaletteUpdated += (ref pal) => pal.Texture = pal.RenderTexture.Texture;
     }
 
     public void FrameUpdate(KRenderer renderer, int layer)
@@ -38,7 +46,7 @@ public struct KTexturePalette
         renderer.DrawRect(new FloatRect(Position, (Vector2f)Texture.Size), BackgroundColor, layer);
         renderer.DrawRect(
             new FloatRect(Position, (Vector2f)Texture.Size), 
-            new FloatRect(Position, (Vector2f)Texture.Size), Color.White, layer);
+            new FloatRect((0, 0), (Vector2f)Texture.Size), Color.White, layer);
     }
 
     public void DrawBuffer(Vertex[] vertices, uint vCount, PrimitiveType primitive, RenderStates states)
@@ -66,7 +74,7 @@ public struct KTileMap
     public FloatRect[] TileSet;
     public Vertex[] Buffer;
 
-    public KTileMap(in KGrid grid, FloatRect[] tileSet, int layer)
+    public KTileMap(in KGrid grid, FloatRect[] tileSet)
     {
         Grid = grid;
         TileSet = tileSet;   
@@ -81,16 +89,8 @@ public struct KTileMap
             FloatRect tRect;
             var pos = Grid.IndexToCoords(i);
             
-            if (i < TileSet.Length)
-            {
-                color = Color.White;
-                tRect = TileSet[Grid.Cells[i]];
-            }
-            else
-            {
-                color = Color.Magenta;
-                tRect = new FloatRect();
-            }
+            color = Color.White;
+            tRect = TileSet[Grid.Cells[i]];
 
             Buffer[i * 6] = new(pos, color, tRect.Position);
             Buffer[i * 6 + 1] = new((pos.X + Grid.CellSize.X, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
@@ -121,7 +121,7 @@ public struct KTileMap
 public class KEditor
 {
     public const int EDITOR_LAYER = 0;
-    public const int LINE_LAYER = 0;
+    public const int LINE_LAYER = 1;
 
     public const int TILE_SIZE = 4;
 
@@ -145,22 +145,60 @@ public class KEditor
             Position = (0, 0),
             CellSize = (TILE_SIZE, TILE_SIZE),
         };  
-        TileMap = new(Grid, [], EDITOR_LAYER);
+
+        TileMap = new(Grid, []);
         Palette = new();
         _mousePos = (0, 0);
         _currentTool = KEditorTool.CURSOR;
     }
 
-    public void Init(RenderWindow window, KRenderer renderer)
+    public void Init(RenderWindow window, KRenderer renderer, KTextureAtlas atlas)
     {
-        const int DEFAULT_ATLAS = 0;
-
-        Palette.Init(KProgram.Atlases[DEFAULT_ATLAS].Texture);
-
         window.SetKeyRepeatEnabled(false);
         window.MouseMoved += HandleMouseInput;
         window.MouseButtonPressed += HandleMouseInput;
         window.KeyPressed += HandleKeyInput;
+
+        Palette.Init(atlas.Texture);
+        
+        var coords = atlas.Coordinates;
+
+        TileMap = new(Grid,
+        [
+            coords["floor"],
+            coords["pit"],
+            coords["void"],
+
+            coords["wall_tl"],
+            coords["wall_t"],
+            coords["wall_tr"],
+            coords["wall_l"],
+            coords["stairs"],
+            coords["wall_r"],
+            coords["wall_bl"],
+            coords["wall_b"],
+            coords["wall_br"],
+            
+            coords["cliff_tl"],
+            coords["cliff_t"],
+            coords["cliff_tr"],
+            coords["cliff_l"],
+            coords["seal"],
+            coords["cliff_r"],
+            coords["cliff_bl"],
+            coords["cliff_b"],
+            coords["cliff_br"],
+
+            coords["ice_tl"],
+            coords["ice_t"],
+            coords["ice_tr"],
+            coords["ice_l"],
+            coords["ice"],
+            coords["ice_r"],
+            coords["ice_bl"],
+            coords["ice_b"],
+            coords["ice_br"],
+        ]);
         TileMap.BakeVertices();
     }
 
@@ -181,25 +219,19 @@ public class KEditor
         ref var layer = ref renderer.DrawLayers[EDITOR_LAYER];
 
         if (TileMap.Enabled) TileMap.FrameUpdate(renderer, EDITOR_LAYER);
+        if (Palette.Enabled) Palette.FrameUpdate(renderer, EDITOR_LAYER);
+        if (Grid.Enabled) Grid.Draw(renderer, LINE_LAYER);
 
-        if (Grid.Enabled)
-        {
-            if (Palette.Enabled) Palette.FrameUpdate(renderer, EDITOR_LAYER);
+        var index = Grid.CoordsToIndex(
+            (_mousePos.X, _mousePos.Y), 
+            1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[0].Resolution.X));
 
-            Grid.Draw(renderer, 1);
-
-            var index = Grid.CoordsToIndex(
-                (_mousePos.X, _mousePos.Y), 
-                1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[0].Resolution.X));
-
-            renderer.DrawRect(new FloatRect(Grid.IndexToCoords(index), (TILE_SIZE, TILE_SIZE)), new(255, 255, 0, 150), EDITOR_LAYER);
-        }
+        renderer.DrawRect(new FloatRect(Grid.IndexToCoords(index), (TILE_SIZE, TILE_SIZE)), new(255, 255, 0, 150), EDITOR_LAYER);
     }
 
     public void HandleMouseInput(object? obj, MouseMoveEventArgs args)
     {
-        //not a fan of closure classes.
-        _mousePos = args.Position;
+        KProgram.Editor._mousePos = args.Position;
     }
 
     public void HandleMouseInput(object? obj, MouseButtonEventArgs args)
@@ -208,7 +240,6 @@ public class KEditor
         {
             
         }
-        
     }
 
     public void HandleKeyInput(object? obj, KeyEventArgs args)
@@ -221,6 +252,10 @@ public class KEditor
 
             case Keyboard.Key.E:
                 TileMap.Enabled = !TileMap.Enabled; 
+                break;
+
+            case Keyboard.Key.G:
+                Grid.Enabled = !Grid.Enabled; 
                 break;
             
             default:
