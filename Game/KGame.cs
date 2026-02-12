@@ -1,4 +1,3 @@
-
 using System.Buffers;
 using SFML.Graphics;
 using SFML.System;
@@ -6,54 +5,52 @@ using SFML.System;
 public struct KGrid
 {
     public bool Enabled;
-    public int Rows;
     public int Columns;
+    public int Rows;
     public Color LineColor;
     public Vector2f Position;
-    public Vector2i CellSize;
+    public int CellWidth;
+    public int CellHeight;
     public uint[] Cells;
 
-    public int CellCount => Rows * Columns;
+    public int CellCount => Columns * Rows;
 
     public KGrid()
     {
         Enabled = true;
-        Rows = Columns = CellSize.X = CellSize.Y = 0;
+        Rows = Columns = CellWidth = CellHeight = 0;
         LineColor = Color.White;
         Cells = [];
     }
 
-    public KGrid(int rows, int columns, int x, int y, int cellWidth, int cellHeight)
+    public KGrid(int columns, int rows, int x, int y, int cellWidth, int cellHeight)
     {
         Enabled = true;
-        Rows = rows;
         Columns = columns;
-        CellSize.X = cellWidth;
-        CellSize.Y = cellHeight;
+        Rows = rows;
+        LineColor = Color.White;
+        CellWidth = cellWidth;
+        CellHeight = cellHeight;
         Position = (x, y);
         Cells = new uint[Rows * Columns];
         Array.Fill<uint>(Cells, 0);
     }
 
-    public void Draw(KRenderer renderer, int lineLayer)
+    public void FrameUpdate(KRenderer renderer, int lineLayer)
     {
-        ref var l = ref renderer.DrawLayers[lineLayer];
-        
         uint vCount = 0;
-        int columns = (int) l.Resolution.X / CellSize.X;
-        int rows = (int) l.Resolution.Y / CellSize.Y;
-        var buffer = ArrayPool<Vertex>.Shared.Rent(rows * 2 + columns * 2);
+        var buffer = ArrayPool<Vertex>.Shared.Rent(Columns * 2 + Rows * 2);
 
-        for (int i = 0; i < rows; i++)
+        for (int i = 0; i < Rows; i++)
         {
-            buffer[vCount] = new((Position.X, Position.Y + i * CellSize.X), LineColor);
-            buffer[vCount + 1] = new((Position.X + columns * CellSize.X, Position.Y + i * CellSize.Y), LineColor);
+            buffer[vCount] = new((Position.X, Position.Y + i * CellWidth), LineColor);
+            buffer[vCount + 1] = new((Position.X + Columns * CellWidth, Position.Y + i * CellHeight), LineColor);
             vCount += 2;
         }
-        for (int i = 0; i < columns; i++)
+        for (int i = 0; i < Columns; i++)
         {
-            buffer[vCount] = new((Position.X + i * CellSize.X, Position.Y), LineColor);
-            buffer[vCount + 1] = new((Position.X + i * CellSize.X, Position.Y + rows * CellSize.Y), LineColor);
+            buffer[vCount] = new((Position.X + i * CellWidth, Position.Y), LineColor);
+            buffer[vCount + 1] = new((Position.X + i * CellWidth, Position.Y + Rows * CellHeight), LineColor);
             vCount += 2;
         }
 
@@ -68,8 +65,8 @@ public struct KGrid
     public int CoordsToIndex(Vector2f pos, float scale = 1)
     {
         pos -= Position * scale;
-        int column = (int)(pos.X / CellSize.X * scale);
-        int row = (int)(pos.Y / CellSize.Y * scale);
+        int column = (int)(pos.X / CellWidth * scale);
+        int row = (int)(pos.Y / CellHeight * scale);
 
         return PositionToIndex(column, row);   
     }
@@ -78,8 +75,8 @@ public struct KGrid
     {
         return new()
         {
-            X = Position.X + (int)(index % Columns) * CellSize.X * scale,
-            Y = Position.Y + (int)(index / Columns) * CellSize.Y * scale,
+            X = Position.X + (int)(index % Columns) * CellWidth * scale,
+            Y = Position.Y + (int)(index / Columns) * CellHeight * scale,
         };
     }
 }

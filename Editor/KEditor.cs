@@ -4,6 +4,59 @@ using SFML.Window;
 
 public delegate void PaletteHandler(ref KTexturePalette palette);
 
+public struct KTileMap
+{
+    public bool Enabled;
+    public KGrid Grid;
+    public FloatRect[] TileSet;
+    public Vertex[] Buffer;
+
+    public KTileMap(in KGrid grid, FloatRect[] tileSet)
+    {
+        Grid = grid;
+        TileSet = tileSet;   
+        Buffer = new Vertex[grid.CellCount * 6];
+    }
+
+    public KTileMap(in KGrid grid) : this(grid, []) { }
+
+    public Vertex[] BakeVertices()
+    {
+        for (int i = 0; i < Grid.CellCount; i++)
+        { 
+            Color color;
+            FloatRect tRect;
+            var pos = Grid.IndexToCoords(i);
+            
+            color = Color.White;
+            tRect = TileSet[Grid.Cells[i]];
+
+            Buffer[i * 6] = new(pos, color, tRect.Position);
+            Buffer[i * 6 + 1] = new((pos.X + Grid.CellWidth, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
+            Buffer[i * 6 + 2] = new((pos.X, pos.Y + Grid.CellHeight), color, (tRect.Left, tRect.Top + tRect.Height));
+
+            Buffer[i * 6 + 3] = new((pos.X + Grid.CellWidth, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
+            Buffer[i * 6 + 4] = new(pos + (Grid.CellWidth, Grid.CellHeight), color, tRect.Position + tRect.Size);   
+            Buffer[i * 6 + 5] = new((pos.X, pos.Y + Grid.CellHeight), color, (tRect.Left, tRect.Top + tRect.Height));   
+        }
+        return Buffer;
+    }
+
+    public void FrameUpdate(KRenderer renderer, int layer)
+    {
+        if (renderer.DrawLayers.Length <= layer) return;
+
+        renderer.DrawBuffer(Buffer, (uint)Buffer.Length, layer);
+    }
+
+    // public void BakeTexture(in KTexturePalette texturePalette)
+    // {
+    //     var buffer = BakeVertices();
+    //     texturePalette.Clear();
+    //     texturePalette.DrawBuffer(buffer, (uint)buffer.Length, PrimitiveType.Triangles);
+    // }
+}
+
 public struct KTexturePalette
 {
     public bool Enabled;
@@ -11,16 +64,19 @@ public struct KTexturePalette
     public Vector2f Position;
     public Texture Texture;
     public RenderTexture RenderTexture;
+    public KTileMap TileMap;
 
     public event PaletteHandler? PaletteUpdated;
 
-    public KTexturePalette(Texture atlas)
+    public KTexturePalette(Texture atlas, KTileMap tileMap)
     {
         Enabled = false;
         BackgroundColor = new(100, 100, 100);
         Position = (0, 0);
 
         Texture = atlas;
+        TileMap = tileMap;
+        
         RenderTexture = new(atlas.Size);
         RenderTexture.Clear(BackgroundColor);
         RenderTexture.Draw(new Sprite(atlas));
@@ -43,6 +99,8 @@ public struct KTexturePalette
 
     public void FrameUpdate(KRenderer renderer, int layer)
     {
+        //if (TileMap.Enabled) TileMap.FrameUpdate(renderer, layer);
+
         renderer.DrawRect(new FloatRect(Position, (Vector2f)Texture.Size), BackgroundColor, layer);
         renderer.DrawRect(
             new FloatRect(Position, (Vector2f)Texture.Size), 
@@ -67,57 +125,6 @@ public enum KEditorTool
     TILE_BRUSH = 1
 }
 
-public struct KTileMap
-{
-    public bool Enabled;
-    public KGrid Grid;
-    public FloatRect[] TileSet;
-    public Vertex[] Buffer;
-
-    public KTileMap(in KGrid grid, FloatRect[] tileSet)
-    {
-        Grid = grid;
-        TileSet = tileSet;   
-        Buffer = new Vertex[grid.CellCount * 6];
-    }
-
-    public Vertex[] BakeVertices()
-    {
-        for (int i = 0; i < Grid.CellCount; i++)
-        { 
-            Color color;
-            FloatRect tRect;
-            var pos = Grid.IndexToCoords(i);
-            
-            color = Color.White;
-            tRect = TileSet[Grid.Cells[i]];
-
-            Buffer[i * 6] = new(pos, color, tRect.Position);
-            Buffer[i * 6 + 1] = new((pos.X + Grid.CellSize.X, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
-            Buffer[i * 6 + 2] = new((pos.X, pos.Y + Grid.CellSize.Y), color, (tRect.Left, tRect.Top + tRect.Height));
-
-            Buffer[i * 6 + 3] = new((pos.X + Grid.CellSize.X, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
-            Buffer[i * 6 + 4] = new(pos + (Vector2f)Grid.CellSize, color, tRect.Position + tRect.Size);   
-            Buffer[i * 6 + 5] = new((pos.X, pos.Y + Grid.CellSize.Y), color, (tRect.Left, tRect.Top + tRect.Height));   
-        }
-        return Buffer;
-    }
-
-    public void FrameUpdate(KRenderer renderer, int layer)
-    {
-        if (renderer.DrawLayers.Length <= layer) return;
-
-        renderer.DrawBuffer(Buffer, (uint)Buffer.Length, layer);
-    }
-
-    // public void BakeTexture(in KTexturePalette texturePalette)
-    // {
-    //     var buffer = BakeVertices();
-    //     texturePalette.Clear();
-    //     texturePalette.DrawBuffer(buffer, (uint)buffer.Length, PrimitiveType.Triangles);
-    // }
-}
-
 public class KEditor
 {
     public const int EDITOR_LAYER = 0;
@@ -126,30 +133,22 @@ public class KEditor
     public const int TILE_SIZE = 4;
 
     private KEditorTool _currentTool;
-
     private Vector2i _mousePos;
-    private Vector2f _selectedTile;
+    private FloatRect _selectedTile;
     
     public KGrid Grid;
-    public KTileMap TileMap;
     public KTexturePalette Palette;
+
+    public Vector2i TileUnit => new(TILE_SIZE, TILE_SIZE);
 
     public KEditor()
     {
-        Grid = new()
-        {
-            Enabled = true,
-            Rows = 240 / 4,
-            Columns = 320 / 4,
-            LineColor = Color.Green,
-            Position = (0, 0),
-            CellSize = (TILE_SIZE, TILE_SIZE),
-        };  
-
-        TileMap = new(Grid, []);
-        Palette = new();
-        _mousePos = (0, 0);
         _currentTool = KEditorTool.CURSOR;
+        _mousePos = (0, 0);
+        _selectedTile = new();
+
+        Grid = new(320 / TILE_SIZE, 240 / TILE_SIZE, 0, 0, TILE_SIZE, TILE_SIZE);
+        Palette = new();
     }
 
     public void Init(RenderWindow window, KRenderer renderer, KTextureAtlas atlas)
@@ -158,49 +157,13 @@ public class KEditor
         window.MouseMoved += HandleMouseInput;
         window.MouseButtonPressed += HandleMouseInput;
         window.KeyPressed += HandleKeyInput;
-
-        Palette.Init(atlas.Texture);
         
         var coords = atlas.Coordinates;
 
-        TileMap = new(Grid,
-        [
-            coords["floor"],
-            coords["pit"],
-            coords["void"],
-
-            coords["wall_tl"],
-            coords["wall_t"],
-            coords["wall_tr"],
-            coords["wall_l"],
-            coords["stairs"],
-            coords["wall_r"],
-            coords["wall_bl"],
-            coords["wall_b"],
-            coords["wall_br"],
-            
-            coords["cliff_tl"],
-            coords["cliff_t"],
-            coords["cliff_tr"],
-            coords["cliff_l"],
-            coords["seal"],
-            coords["cliff_r"],
-            coords["cliff_bl"],
-            coords["cliff_b"],
-            coords["cliff_br"],
-
-            coords["ice_tl"],
-            coords["ice_t"],
-            coords["ice_tr"],
-            coords["ice_l"],
-            coords["ice"],
-            coords["ice_r"],
-            coords["ice_bl"],
-            coords["ice_b"],
-            coords["ice_br"],
-        ]);
-        TileMap.BakeVertices();
+        Palette = new(atlas.Texture, new(Grid));
+        Palette.Init(atlas.Texture);
     }
+
 
     public void Deinit(RenderWindow window)
     {
@@ -218,15 +181,17 @@ public class KEditor
     {
         ref var layer = ref renderer.DrawLayers[EDITOR_LAYER];
 
-        if (TileMap.Enabled) TileMap.FrameUpdate(renderer, EDITOR_LAYER);
+        if (Palette.TileMap.Enabled) Palette.TileMap.FrameUpdate(renderer, EDITOR_LAYER);
         if (Palette.Enabled) Palette.FrameUpdate(renderer, EDITOR_LAYER);
-        if (Grid.Enabled) Grid.Draw(renderer, LINE_LAYER);
+        if (Grid.Enabled) Grid.FrameUpdate(renderer, LINE_LAYER);
 
         var index = Grid.CoordsToIndex(
             (_mousePos.X, _mousePos.Y), 
             1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[0].Resolution.X));
 
-        renderer.DrawRect(new FloatRect(Grid.IndexToCoords(index), (TILE_SIZE, TILE_SIZE)), new(255, 255, 0, 150), EDITOR_LAYER);
+        renderer.DrawRect(
+            new FloatRect(Grid.IndexToCoords(index), (Vector2f)TileUnit), 
+            new(255, 255, 0, 150), EDITOR_LAYER);
     }
 
     public void HandleMouseInput(object? obj, MouseMoveEventArgs args)
@@ -236,9 +201,33 @@ public class KEditor
 
     public void HandleMouseInput(object? obj, MouseButtonEventArgs args)
     {
-        if (args.Button == Mouse.Button.Left && Palette.Enabled)
+        if (args.Button == Mouse.Button.Left)
         {
-            
+            var index = Grid.CoordsToIndex(
+                (Vector2f)args.Position, 
+                1 / ((float)KProgram.Window.Size.X / KProgram.DrawLayers[0].Resolution.X));
+
+            if (Palette.TileMap.Enabled)
+            {
+                if (Palette.Enabled)
+                {
+                    _selectedTile = new(Grid.IndexToCoords(index), (Vector2f)TileUnit);
+                    Console.WriteLine($"selected: {index}, {_selectedTile.Position}");
+                }
+                else
+                {
+                    Console.WriteLine($"paint: {index}, {_selectedTile.Position}");
+
+                    var pos = Grid.IndexToCoords(index);
+                    Palette.TileMap.Buffer[index * 6] = new(pos, _selectedTile.Position);
+                    Palette.TileMap.Buffer[index * 6 + 1] = new((pos.X + TILE_SIZE, pos.Y), (_selectedTile.Left + _selectedTile.Width, _selectedTile.Top));
+                    Palette.TileMap.Buffer[index * 6 + 2] = new((pos.X, pos.Y + TILE_SIZE), (_selectedTile.Left, _selectedTile.Top + _selectedTile.Height));
+
+                    Palette.TileMap.Buffer[index * 6 + 3] = new((pos.X + TILE_SIZE, pos.Y), (_selectedTile.Left + _selectedTile.Width, _selectedTile.Top));
+                    Palette.TileMap.Buffer[index * 6 + 4] = new(pos + (Vector2f)TileUnit, _selectedTile.Position + _selectedTile.Size);
+                    Palette.TileMap.Buffer[index * 6 + 5] = new((pos.X, pos.Y + TILE_SIZE), (_selectedTile.Left, _selectedTile.Top + _selectedTile.Height));
+                }
+            }
         }
     }
 
@@ -251,7 +240,7 @@ public class KEditor
                 break;
 
             case Keyboard.Key.E:
-                TileMap.Enabled = !TileMap.Enabled; 
+                Palette.TileMap.Enabled = !Palette.TileMap.Enabled; 
                 break;
 
             case Keyboard.Key.G:

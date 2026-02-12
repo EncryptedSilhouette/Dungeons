@@ -114,7 +114,7 @@ public class KProgram
             },
         ];
 
-        Renderer.Init(BufferRegions[0], DrawLayers);
+        Renderer.Init(BufferRegions[2], DrawLayers);
         Editor.Init(Window, Renderer, Atlases[0]);
     }
 
