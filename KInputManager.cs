@@ -60,6 +60,7 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
         Window.SetKeyRepeatEnabled(false);
         Window.MouseMoved += MouseMoved;
         Window.MouseButtonPressed += MouseButtonPressed;
+        Window.MouseButtonReleased += MouseButtonReleased;
         Window.MouseWheelScrolled += MouseScrolled;
         Window.KeyPressed += KeyPressed;
         Window.KeyReleased += KeyReleased;
@@ -70,7 +71,6 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
     public void Update()
     {
         _prevMouseStates = _mouseStates;
-        _mouseStates = KMouseStates.NONE;
 
         for (int i = 0; i < _activeKeyCount; i++)
         {
@@ -135,7 +135,6 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
         MousePosX = x;
         MousePosY = y;
     }
-
     private void MouseButtonPressed(object? obj, MouseButtonEventArgs args)
     {
         args.Position.Deconstruct(out int x, out int y);
@@ -162,6 +161,39 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
 
             case Mouse.Button.Extra2:
                 _mouseStates |= KMouseStates.M5_DOWN;
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    public void MouseButtonReleased(object? obj, MouseButtonEventArgs args)
+    {
+        args.Position.Deconstruct(out int x, out int y);
+        MousePosX = x;
+        MousePosY = y;
+
+        switch (args.Button)
+        {
+            case Mouse.Button.Left:
+                _mouseStates &= ~KMouseStates.M1_DOWN;
+                break;
+
+            case Mouse.Button.Right:
+                _mouseStates &= ~KMouseStates.M2_DOWN;
+                break;
+
+            case Mouse.Button.Middle:
+                _mouseStates &= ~KMouseStates.M3_DOWN;
+                break;
+
+            case Mouse.Button.Extra1:
+                _mouseStates &= ~KMouseStates.M4_DOWN;
+                break;
+
+            case Mouse.Button.Extra2:
+                _mouseStates &= ~KMouseStates.M5_DOWN;
                 break;
 
             default:

@@ -133,79 +133,51 @@ public class KEditor
     public const int TILE_SIZE = 4;
 
     private KEditorTool _currentTool;
-    private Vector2i _mousePos;
     private FloatRect _selectedTile;
     
     public KGrid Grid;
     public KTexturePalette Palette;
+    public KInputManager InputManager;
 
     public Vector2i TileUnit => new(TILE_SIZE, TILE_SIZE);
 
-    public KEditor()
+    public KEditor(KInputManager inputManager)
     {
         _currentTool = KEditorTool.CURSOR;
-        _mousePos = (0, 0);
         _selectedTile = new();
-
+        
+        InputManager = inputManager;
         Grid = new(320 / TILE_SIZE, 240 / TILE_SIZE, 0, 0, TILE_SIZE, TILE_SIZE);
         Palette = new();
     }
 
-    public void Init(RenderWindow window, KRenderer renderer, KTextureAtlas atlas)
+    public void Init(KRenderer renderer, KTextureAtlas atlas)
     {
-        window.SetKeyRepeatEnabled(false);
-        window.MouseMoved += HandleMouseInput;
-        window.MouseButtonPressed += HandleMouseInput;
-        window.KeyPressed += HandleKeyInput;
-        
         var coords = atlas.Coordinates;
 
         Palette = new(atlas.Texture, new(Grid));
         Palette.Init(atlas.Texture);
     }
 
-
-    public void Deinit(RenderWindow window)
-    {
-        window.MouseMoved -= HandleMouseInput;
-        window.MouseButtonPressed -= HandleMouseInput;
-        window.KeyPressed -= HandleKeyInput;
-    }
-
     public void Update(uint currentFrame)
     {
-        
-    }
+        if (InputManager.IsKeyPressed(Keyboard.Key.Q))
+        {
+            Palette.Enabled = !Palette.Enabled;            
+        }
+        if (InputManager.IsKeyPressed(Keyboard.Key.E))
+        {
+            Palette.TileMap.Enabled = !Palette.TileMap.Enabled; 
+        }
+        if (InputManager.IsKeyPressed(Keyboard.Key.G))
+        {
+            Grid.Enabled = !Grid.Enabled; 
+        }
 
-    public void FrameUpdate(uint currentFrame, KRenderer renderer)
-    {
-        ref var layer = ref renderer.DrawLayers[EDITOR_LAYER];
-
-        if (Palette.TileMap.Enabled) Palette.TileMap.FrameUpdate(renderer, EDITOR_LAYER);
-        if (Palette.Enabled) Palette.FrameUpdate(renderer, EDITOR_LAYER);
-        if (Grid.Enabled) Grid.FrameUpdate(renderer, LINE_LAYER);
-
-        var index = Grid.CoordsToIndex(
-            (_mousePos.X, _mousePos.Y), 
-            1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[0].Resolution.X));
-
-        renderer.DrawRect(
-            new FloatRect(Grid.IndexToCoords(index), (Vector2f)TileUnit), 
-            new(255, 255, 0, 150), EDITOR_LAYER);
-    }
-
-    public void HandleMouseInput(object? obj, MouseMoveEventArgs args)
-    {
-        KProgram.Editor._mousePos = args.Position;
-    }
-
-    public void HandleMouseInput(object? obj, MouseButtonEventArgs args)
-    {
-        if (args.Button == Mouse.Button.Left)
+        if (InputManager.IsMouseDown(KMouseStates.M1_DOWN))
         {
             var index = Grid.CoordsToIndex(
-                (Vector2f)args.Position, 
-                1 / ((float)KProgram.Window.Size.X / KProgram.DrawLayers[0].Resolution.X));
+                InputManager.GetMousePosition(1 / ((float)KProgram.Window.Size.X / KProgram.DrawLayers[0].Resolution.X)));
 
             if (Palette.TileMap.Enabled)
             {
@@ -231,24 +203,20 @@ public class KEditor
         }
     }
 
-    public void HandleKeyInput(object? obj, KeyEventArgs args)
+    public void FrameUpdate(uint currentFrame, KRenderer renderer)
     {
-        switch (args.Code)
-        {
-            case Keyboard.Key.Q:
-                Palette.Enabled = !Palette.Enabled;
-                break;
+        ref var layer = ref renderer.DrawLayers[EDITOR_LAYER];
 
-            case Keyboard.Key.E:
-                Palette.TileMap.Enabled = !Palette.TileMap.Enabled; 
-                break;
+        if (Palette.TileMap.Enabled) Palette.TileMap.FrameUpdate(renderer, EDITOR_LAYER);
+        if (Palette.Enabled) Palette.FrameUpdate(renderer, EDITOR_LAYER);
+        if (Grid.Enabled) Grid.FrameUpdate(renderer, LINE_LAYER);
 
-            case Keyboard.Key.G:
-                Grid.Enabled = !Grid.Enabled; 
-                break;
-            
-            default:
-                break;
-        }
+        var index = Grid.CoordsToIndex(
+            InputManager.GetMousePosition(),
+            1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[0].Resolution.X));
+
+        renderer.DrawRect(
+            new FloatRect(Grid.IndexToCoords(index), (Vector2f)TileUnit), 
+            new(255, 255, 0, 150), EDITOR_LAYER);
     }
 }
