@@ -7,10 +7,10 @@ public struct KGrid
     public bool Enabled;
     public int Columns;
     public int Rows;
-    public Color LineColor;
-    public Vector2f Position;
     public int CellWidth;
     public int CellHeight;
+    public Color LineColor;
+    public Vector2f Position;
     public uint[] Cells;
 
     public int CellCount => Columns * Rows;

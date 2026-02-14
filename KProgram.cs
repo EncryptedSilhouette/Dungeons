@@ -40,8 +40,9 @@ public class KProgram
     public static KProgramState State;
     public static RenderWindow Window;
     public static KConsole DebugConsole;
-    public static KEditor Editor;
     public static KRenderer Renderer;
+    public static KEditor Editor;
+    public static KInputManager InputManager;
     public static KGameManager GameManager;
     public static VertexBuffer Buffer;
     public static KBufferRegion[] BufferRegions;
@@ -60,6 +61,7 @@ public class KProgram
         Buffer = new(180_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
         BufferRegions = CreateBufferRegions([60_000, 60_000, 60_000]);  
         Renderer = new(Window, Buffer);
+        InputManager = new(Window);
         GameManager = new();
         Atlases = [];
         DrawLayers = [];
@@ -150,6 +152,7 @@ public class KProgram
     {
         Editor.FrameUpdate(currentFrame, Renderer);
         Renderer.FrameUpdate();
+        InputManager.Update(); //Call last for proper input.
     }
 
     public static KTextureAtlas LoadTextureAtlas(string filePath)
