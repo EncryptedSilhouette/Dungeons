@@ -1,4 +1,5 @@
-﻿using SFML.Graphics;
+﻿using System.Diagnostics;
+using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 
@@ -40,7 +41,7 @@ public class KProgram
     public static KProgramState State;
     public static RenderWindow Window;
     public static KConsole DebugConsole;
-    public static KRenderer Renderer;
+    public static KRenderManager Renderer;
     public static KEditor Editor;
     public static KInputManager InputManager;
     public static KGameManager GameManager;
@@ -217,4 +218,24 @@ public class KProgram
         Image img = new((width, height), Color.Magenta);
         return new(img);
     }
+
+    public static bool CheckPointCircleCollision(Vector2f posA, Vector2f posB, float r) =>
+        (posB - posA).Length <= r; 
+
+    public static bool CheckPointRectCollision(Vector2f pos, FloatRect rect) =>
+        rect.Contains(pos);
+
+    public static bool CheckCircleCircleCollison(Vector2f posA, Vector2f posB, float ra, float rb) =>
+        (posB - posA).Length <= ra + rb; 
+
+    //WIP
+    public static bool CheckCircleRectCollision(Vector2f pos, float r, FloatRect rect)
+    {
+        return true;
+    }
+
+    public static bool CheckRectRectCollision()
+    {
+        return true;
+    }    
 }

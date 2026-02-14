@@ -36,7 +36,7 @@ public struct KGrid
         Array.Fill<uint>(Cells, 0);
     }
 
-    public void FrameUpdate(KRenderer renderer, int lineLayer)
+    public void FrameUpdate(KRenderManager renderer, int lineLayer)
     {
         uint vCount = 0;
         var buffer = ArrayPool<Vertex>.Shared.Rent(Columns * 2 + Rows * 2);
@@ -112,7 +112,7 @@ public class KGame
         
     }
 
-    public void FrameUpdate(uint currentFrame, KRenderer renderer)
+    public void FrameUpdate(uint currentFrame, KRenderManager renderer)
     {
         
     }

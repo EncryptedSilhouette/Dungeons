@@ -2,7 +2,84 @@ using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 
-public class KRenderer
+public struct KSprite
+{
+    public int Layer;
+    public float Rotation;
+    public Color Color;
+    public Vector2f Rotocenter;
+    public FloatRect Bounds;
+    public FloatRect TextureBounds;
+    public FloatRect[] Frames;
+
+    public KSprite()
+    {
+        Rotation = 0.0f;
+        Rotocenter = (0, 0);
+        Bounds = new();
+        TextureBounds = new();
+        Frames = [];
+    }
+
+    public Vector2f Center => Bounds.Position + Bounds.Size / 2;
+    public Vertex VertexA
+    {
+        get
+        {
+            Vector2f pos = Rotocenter - Bounds.Size / 2;
+            if (Rotation % 360 == 0)
+            {
+                pos.X = pos.X * MathF.Cos(Rotation) - pos.Y * MathF.Sin(Rotation);
+                pos.Y = pos.X * MathF.Sin(Rotation) + pos.Y * MathF.Cos(Rotation);
+            }
+            return new(Center + pos, Color, TextureBounds.Position);
+        }
+    }
+
+    public Vertex VertexB
+    {
+        get
+        {
+            Vector2f pos = Rotocenter + (Bounds.Width / 2, Bounds.Height / -2);
+            if (Rotation % 360 == 0)
+            {
+                pos.X = pos.X * MathF.Cos(Rotation) - pos.Y * MathF.Sin(Rotation);
+                pos.Y = pos.X * MathF.Sin(Rotation) + pos.Y * MathF.Cos(Rotation);
+            }
+            return new(Center + pos, Color, TextureBounds.Position);
+        }
+    }
+
+    public Vertex VertexC
+    {
+        get
+        {
+            Vector2f pos = Rotocenter + Bounds.Size / 2;
+            if (Rotation % 360 == 0)
+            {
+                pos.X = pos.X * MathF.Cos(Rotation) - pos.Y * MathF.Sin(Rotation);
+                pos.Y = pos.X * MathF.Sin(Rotation) + pos.Y * MathF.Cos(Rotation);
+            }
+            return new(Center + pos, Color, TextureBounds.Position);
+        }
+    }
+
+    public Vertex VertexD
+    {
+        get
+        {
+            Vector2f pos = Rotocenter + (Bounds.Width / -2, + Bounds.Height / 2);
+            if (Rotation % 360 == 0)
+            {
+                pos.X = pos.X * MathF.Cos(Rotation) - pos.Y * MathF.Sin(Rotation);
+                pos.Y = pos.X * MathF.Sin(Rotation) + pos.Y * MathF.Cos(Rotation);
+            }
+            return new(Center + pos, Color, TextureBounds.Position);
+        }
+    }
+}
+
+public class KRenderManager
 {
     public const int SCREEN_LAYER = -1;
 
@@ -18,7 +95,7 @@ public class KRenderer
     public Vector2u ScreenSize => Window.Size;
     public Vector2u Center => Window.Size / 2;
 
-    public KRenderer(RenderWindow window, VertexBuffer buffer)
+    public KRenderManager(RenderWindow window, VertexBuffer buffer)
     {
         _view = window.DefaultView;
         _drawBuffer = new Vertex[6];
@@ -127,6 +204,46 @@ public class KRenderer
 
     public void DrawRect(Vector2f position, Vector2f size, Color color, int layer = SCREEN_LAYER) => 
         DrawRect(new FloatRect(position, size), color, layer);
+
+    public void DrawSprite(in KSprite sprite, Color color, int layer = SCREEN_LAYER)
+    {
+        _drawBuffer[0] = sprite.VertexA;
+        _drawBuffer[0].Color = color;
+        
+        _drawBuffer[1] = sprite.VertexB;
+        _drawBuffer[1].Color = color;
+
+        _drawBuffer[2] = sprite.VertexD;
+        _drawBuffer[2].Color = color;
+
+        _drawBuffer[3] = sprite.VertexB;
+        _drawBuffer[3].Color = color;
+
+        _drawBuffer[4] = sprite.VertexC;
+        _drawBuffer[4].Color = color;
+
+        _drawBuffer[5] = sprite.VertexD;
+        _drawBuffer[5].Color = color;
+        
+        DrawBuffer(_drawBuffer, 6, layer);
+    }
+
+    public void DrawSprite(KSprite sprite, int layer = SCREEN_LAYER)
+    {
+        
+        _drawBuffer[0] = sprite.VertexA;
+        _drawBuffer[1] = sprite.VertexB;
+        _drawBuffer[2] = sprite.VertexD;
+
+        _drawBuffer[3] = sprite.VertexB;
+        _drawBuffer[4] = sprite.VertexC;
+        _drawBuffer[5] = sprite.VertexD;
+
+        DrawBuffer(_drawBuffer, 6, layer);
+    }
+
+    public void DrawSprite(in KSprite sprite) =>
+        DrawSprite(sprite, sprite.Layer);
 
     public VertexBuffer ResizeBuffer(uint size, PrimitiveType primitive = PrimitiveType.Points)
     {

@@ -31,22 +31,22 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
 {
     private bool _readText;
     private int _activeKeyCount;
-    private KMouseStates _mouseStates;
-    private KMouseStates _prevMouseStates;
     private KKeyStates[] _keyStates;
     private Keyboard.Key[] _activeKeys;
 
-    public float MousePosX;
     public float MousePosY;
     public float ScrollDelta;
+    public float MousePosX;
+    public KMouseStates MouseStates;
+    public KMouseStates PrevMouseStates;
     public StringBuilder StringBuilder;
     public RenderWindow Window;
 
     public KInputManager(RenderWindow window)
     {
         _activeKeyCount = 0;
-        _mouseStates = 0;
-        _prevMouseStates = 0;
+        MouseStates = 0;
+        PrevMouseStates = 0;
         _activeKeys = new Keyboard.Key[Keyboard.KeyCount];
         _keyStates = new KKeyStates[Keyboard.KeyCount];
         Array.Fill(_keyStates, KKeyStates.NONE);
@@ -70,7 +70,7 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
 
     public void Update()
     {
-        _prevMouseStates = _mouseStates;
+        PrevMouseStates = MouseStates;
 
         for (int i = 0; i < _activeKeyCount; i++)
         {
@@ -96,13 +96,13 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
         new(MousePosX * scale, MousePosY * scale);
 
     public bool IsMousePressed(KMouseStates state) => 
-        !_prevMouseStates.HasFlag(state) && _mouseStates.HasFlag(state);
+        !PrevMouseStates.HasFlag(state) && MouseStates.HasFlag(state);
 
     public bool IsMouseDown(KMouseStates state) =>
-        _mouseStates.HasFlag(state);
+        MouseStates.HasFlag(state);
 
     public bool IsMouseReleased(KMouseStates state) => 
-        _prevMouseStates.HasFlag(state) && !_mouseStates.HasFlag(state);
+        PrevMouseStates.HasFlag(state) && !MouseStates.HasFlag(state);
 
     public bool CheckKeyState(Keyboard.Key key, KKeyStates states) => 
         _keyStates[(int)key].HasFlag(states);
@@ -144,23 +144,23 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
         switch (args.Button)
         {
             case Mouse.Button.Left:
-                _mouseStates |= KMouseStates.M1_DOWN;
+                MouseStates |= KMouseStates.M1_DOWN;
                 break;
 
             case Mouse.Button.Right:
-                _mouseStates |= KMouseStates.M2_DOWN;
+                MouseStates |= KMouseStates.M2_DOWN;
                 break;
 
             case Mouse.Button.Middle:
-                _mouseStates |= KMouseStates.M3_DOWN;
+                MouseStates |= KMouseStates.M3_DOWN;
                 break;
 
             case Mouse.Button.Extra1:
-                _mouseStates |= KMouseStates.M4_DOWN;
+                MouseStates |= KMouseStates.M4_DOWN;
                 break;
 
             case Mouse.Button.Extra2:
-                _mouseStates |= KMouseStates.M5_DOWN;
+                MouseStates |= KMouseStates.M5_DOWN;
                 break;
 
             default:
@@ -177,23 +177,23 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
         switch (args.Button)
         {
             case Mouse.Button.Left:
-                _mouseStates &= ~KMouseStates.M1_DOWN;
+                MouseStates &= ~KMouseStates.M1_DOWN;
                 break;
 
             case Mouse.Button.Right:
-                _mouseStates &= ~KMouseStates.M2_DOWN;
+                MouseStates &= ~KMouseStates.M2_DOWN;
                 break;
 
             case Mouse.Button.Middle:
-                _mouseStates &= ~KMouseStates.M3_DOWN;
+                MouseStates &= ~KMouseStates.M3_DOWN;
                 break;
 
             case Mouse.Button.Extra1:
-                _mouseStates &= ~KMouseStates.M4_DOWN;
+                MouseStates &= ~KMouseStates.M4_DOWN;
                 break;
 
             case Mouse.Button.Extra2:
-                _mouseStates &= ~KMouseStates.M5_DOWN;
+                MouseStates &= ~KMouseStates.M5_DOWN;
                 break;
 
             default:
@@ -247,7 +247,7 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
 
     private void LostFocus(object? obj, EventArgs args)
     {
-        _mouseStates = KMouseStates.NONE;
+        MouseStates = KMouseStates.NONE;
 
         for (int i = 0; i < _activeKeyCount; i++)
         {
