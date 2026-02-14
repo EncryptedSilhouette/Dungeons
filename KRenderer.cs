@@ -230,7 +230,6 @@ public class KRenderManager
 
     public void DrawSprite(KSprite sprite, int layer = SCREEN_LAYER)
     {
-        
         _drawBuffer[0] = sprite.VertexA;
         _drawBuffer[1] = sprite.VertexB;
         _drawBuffer[2] = sprite.VertexD;
