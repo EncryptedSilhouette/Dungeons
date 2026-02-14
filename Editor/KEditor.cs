@@ -62,11 +62,16 @@ public class KEditor
         if (InputManager.IsKeyPressed(Keyboard.Key.Q))
         {
             Palette.Enabled = !Palette.Enabled;  
-            if (Palette.Enabled) Palette.TileMap.Enabled = true;          
+            if (Palette.Enabled) 
+            {
+                Palette.TileMap.Enabled = true;          
+                Grid.Enabled = Palette.TileMap.Enabled;
+            }
         }
         if (InputManager.IsKeyPressed(Keyboard.Key.E))
         {
             Palette.TileMap.Enabled = !Palette.TileMap.Enabled; 
+            Palette.Enabled = Palette.TileMap.Enabled;
             Grid.Enabled = Palette.TileMap.Enabled;
         }
         if (InputManager.IsKeyPressed(Keyboard.Key.G))
