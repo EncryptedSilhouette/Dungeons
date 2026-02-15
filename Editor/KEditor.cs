@@ -18,7 +18,6 @@ public class KEditor
     private KEditorTool _currentTool;
     private FloatRect _selectedTile;
     
-    public KGrid Grid;
     public KButton Button;
     public KTexturePalette Palette;
     public KInputManager InputManager;
@@ -30,13 +29,6 @@ public class KEditor
         _currentTool = KEditorTool.CURSOR;
         _selectedTile = new();
         
-        InputManager = inputManager;
-        
-        Grid = new(320 / TILE_SIZE, 240 / TILE_SIZE, 0, 0, TILE_SIZE, TILE_SIZE);
-        Grid.Enabled = false;
-
-        Palette = new();
-
         Button = new KButton(new KSprite
         {
             Rotation = 0.0f,
@@ -46,73 +38,51 @@ public class KEditor
             TextureBounds = new(),
             Frames = []
         }, string.Empty);
+
+        Palette = new();
+        InputManager = inputManager;
     }
 
     public void Init(KRenderManager renderer, KTextureAtlas atlas)
     {
-        var coords = atlas.Coordinates;
+        KGrid grid = new(320 / TILE_SIZE, 240 / TILE_SIZE, 0, 0, TILE_SIZE, TILE_SIZE)
+        {
+            Enabled = false
+        };
 
-        Palette = new(atlas.Texture, new(Grid));
-        Palette.Position = (8,8);
+        Palette = new(atlas.Texture, new(grid))
+        {
+            Position = (8,8)
+        };
+
         Palette.Init(atlas.Texture);
     }
 
     public void Update(uint currentFrame)
     {
+        ref var tileMap = ref Palette.TileMap;
+        var downScale = 1 / ((float)KProgram.Window.Size.X / KProgram.DrawLayers[0].Resolution.X);
+
         if (InputManager.IsKeyPressed(Keyboard.Key.Q))
         {
             Palette.Enabled = !Palette.Enabled;  
             if (Palette.Enabled) 
             {
-                Palette.TileMap.Enabled = true;          
-                Grid.Enabled = Palette.TileMap.Enabled;
+                tileMap.Enabled = true;          
             }
         }
         if (InputManager.IsKeyPressed(Keyboard.Key.E))
         {
-            Palette.TileMap.Enabled = !Palette.TileMap.Enabled; 
-            Palette.Enabled = Palette.TileMap.Enabled;
-            Grid.Enabled = Palette.TileMap.Enabled;
+            tileMap.Enabled = !tileMap.Enabled; 
+            Palette.Enabled = tileMap.Enabled;
+            tileMap.Grid.Enabled = tileMap.Enabled;
         }
         if (InputManager.IsKeyPressed(Keyboard.Key.G))
         {
-            Grid.Enabled = !Grid.Enabled; 
+            tileMap.Grid.Enabled = !tileMap.Grid.Enabled; 
         }
-
-        var downScale = 1 / ((float)KProgram.Window.Size.X / KProgram.DrawLayers[0].Resolution.X);
-
-        if (InputManager.IsMouseDown(KMouseStates.M1_DOWN))
-        {
-            var index = Grid.CoordsToIndex(
-                InputManager.GetMousePosition(downScale));
-
-            if (Palette.TileMap.Enabled)
-            {
-                if (Palette.Enabled)
-                {
-                    _selectedTile = new(Grid.IndexToCoords(index), (Vector2f)TileUnit);
-                    Console.WriteLine($"selected: {index}, {_selectedTile.Position}");
-                }
-                else
-                {
-                    Console.WriteLine($"paint: {index}, {_selectedTile.Position}");
-
-                    var pos = Grid.IndexToCoords(index);
-                    var bounds = _selectedTile;
-                    bounds.Position -= Palette.Position;
-
-                    Palette.TileMap.Buffer[index * 6] = new(pos, bounds.Position);
-                    Palette.TileMap.Buffer[index * 6 + 1] = new((pos.X + TILE_SIZE, pos.Y), (bounds.Left + bounds.Width, bounds.Top));
-                    Palette.TileMap.Buffer[index * 6 + 2] = new((pos.X, pos.Y + TILE_SIZE), (bounds.Left, bounds.Top + bounds.Height));
-
-                    Palette.TileMap.Buffer[index * 6 + 3] = new((pos.X + TILE_SIZE, pos.Y), (bounds.Left + bounds.Width, bounds.Top));
-                    Palette.TileMap.Buffer[index * 6 + 4] = new(pos + (Vector2f)TileUnit, bounds.Position + bounds.Size);
-                    Palette.TileMap.Buffer[index * 6 + 5] = new((pos.X, pos.Y + TILE_SIZE), (bounds.Left, bounds.Top + _selectedTile.Height));
-                }
-            }
-        }
-
-        if (!Palette.Enabled && !Palette.TileMap.Enabled) 
+        
+        if (!Palette.Enabled && !tileMap.Enabled) 
         {
             Button.Update(InputManager, InputManager.GetMousePosition(downScale));
         }
@@ -121,20 +91,41 @@ public class KEditor
     public void FrameUpdate(uint currentFrame, KRenderManager renderer)
     {
         ref var layer = ref renderer.DrawLayers[EDITOR_LAYER];
+        ref var tileMap = ref Palette.TileMap;
+        var downScale = 1 / ((float)KProgram.Window.Size.X / KProgram.DrawLayers[0].Resolution.X);
+        var index = tileMap.Grid.CoordsToIndex(InputManager.GetMousePosition(downScale));
 
-        if (Palette.TileMap.Enabled) Palette.TileMap.FrameUpdate(renderer, EDITOR_LAYER);
+        if (tileMap.Enabled && InputManager.IsMouseDown(KMouseStates.M1_DOWN))
+        {
+            if (Palette.Enabled)
+            {
+                _selectedTile = new(tileMap.Grid.IndexToCoords(index), (Vector2f)TileUnit);
+            }
+            else
+            {
+                var pos = tileMap.Grid.IndexToCoords(index);
+                var bounds = _selectedTile;
+                bounds.Position -= Palette.Position;
+
+                tileMap.Buffer[index * 6] = new(pos, bounds.Position);
+                tileMap.Buffer[index * 6 + 1] = new((pos.X + TILE_SIZE, pos.Y), (bounds.Left + bounds.Width, bounds.Top));
+                tileMap.Buffer[index * 6 + 2] = new((pos.X, pos.Y + TILE_SIZE), (bounds.Left, bounds.Top + bounds.Height));
+
+                tileMap.Buffer[index * 6 + 3] = new((pos.X + TILE_SIZE, pos.Y), (bounds.Left + bounds.Width, bounds.Top));
+                tileMap.Buffer[index * 6 + 4] = new(pos + (Vector2f)TileUnit, bounds.Position + bounds.Size);
+                tileMap.Buffer[index * 6 + 5] = new((pos.X, pos.Y + TILE_SIZE), (bounds.Left, bounds.Top + _selectedTile.Height));
+            }
+        }
+
+        if (tileMap.Enabled) tileMap.FrameUpdate(renderer, EDITOR_LAYER);
         if (Palette.Enabled) Palette.FrameUpdate(renderer, EDITOR_LAYER);
-        if (Grid.Enabled) Grid.FrameUpdate(renderer, LINE_LAYER);
-
-        var index = Grid.CoordsToIndex(
-            InputManager.GetMousePosition(),
-            1 / ((float)renderer.Window.Size.X / renderer.DrawLayers[0].Resolution.X));
+        if (tileMap.Grid.Enabled) tileMap.Grid.FrameUpdate(renderer, LINE_LAYER);
 
         renderer.DrawRect(
-            new FloatRect(Grid.IndexToCoords(index), (Vector2f)TileUnit), 
+            new FloatRect(tileMap.Grid.IndexToCoords(index), (Vector2f)TileUnit), 
             new(255, 255, 0, 150), EDITOR_LAYER);
 
-        if (!Palette.Enabled && !Palette.TileMap.Enabled) 
+        if (!Palette.Enabled && !tileMap.Enabled) 
         {
             Button.FrameUpdate(renderer, EDITOR_LAYER);
         }
