@@ -25,6 +25,11 @@ public struct KDrawLayer
     public RenderStates States;
     public KBufferRegion Region;
     public KTextureAtlas TextureAtlas;
+    
+    public Vector2f GetScaleRelativeTo(Vector2f res) => 
+        new(res.X / Resolution.X, res.Y / Resolution.Y);
+    public float GetScaleXRelativeTo(float width) => width / Resolution.X;
+    public float GetScaleYRelativeTo(float height) => height / Resolution.Y;
 }
 
 public class KProgram
