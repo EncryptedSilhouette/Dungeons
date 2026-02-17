@@ -20,16 +20,16 @@ public struct KDrawLayer
 {
     public bool IsStatic;
     public bool Upscale;
-    public Vector2u Resolution;
+    public Vector2f Size;
     public PrimitiveType Primitive;
     public RenderStates States;
     public KBufferRegion Region;
-    public KTextureAtlas TextureAtlas;
+    public KTextureAtlas Atlas;
     
-    public Vector2f GetScaleRelativeTo(Vector2f res) => 
-        new(res.X / Resolution.X, res.Y / Resolution.Y);
-    public float GetScaleXRelativeTo(float width) => width / Resolution.X;
-    public float GetScaleYRelativeTo(float height) => height / Resolution.Y;
+    public Vector2f GetScaleRelativeTo(Vector2f otherSize) => 
+        new(otherSize.X / Size.X, otherSize.Y / Size.Y);
+    public float GetScaleXRelativeTo(float width) => width / Size.X;
+    public float GetScaleYRelativeTo(float height) => height / Size.Y;
 }
 
 public class KProgram
@@ -96,17 +96,17 @@ public class KProgram
             {
                 IsStatic = false,
                 Upscale = true,
-                Resolution = (320, 240),
+                Size = (320, 240),
                 Primitive = PrimitiveType.Triangles,
                 States = new(Atlases[0].Texture),
                 Region = BufferRegions[0],
-                TextureAtlas = Atlases[0]
+                Atlas = Atlases[0]
             },
             new()
             {
                 IsStatic = false,
                 Upscale = true,
-                Resolution = (320, 240),
+                Size = (320, 240),
                 Primitive = PrimitiveType.Lines,
                 States = RenderStates.Default,
                 Region = BufferRegions[1],
@@ -115,7 +115,7 @@ public class KProgram
             {
                 IsStatic = false,
                 Upscale = false,
-                Resolution = Window.Size,
+                Size = (Vector2f)Window.Size,
                 Primitive = PrimitiveType.Triangles,
                 States = RenderStates.Default,
                 Region = BufferRegions[2],
@@ -194,7 +194,6 @@ public class KProgram
                 default:
                     break;
             }
-
             if (atlas.Texture is null) atlas.Texture = CreateErrorTexture(640, 480);
         }
         return atlas;

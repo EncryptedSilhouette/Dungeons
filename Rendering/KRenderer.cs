@@ -125,8 +125,8 @@ public class KRenderManager
 
             if (l.Upscale)
                 renderStates.Transform
-                    .Scale(((float)Window.Size.X / l.Resolution.X, 
-                            (float)Window.Size.X / l.Resolution.X));
+                    .Scale(((float)Window.Size.X / l.Size.X, 
+                            (float)Window.Size.X / l.Size.X));
 
             VertexBuffer.Draw(Window, l.Region.Offset, l.Region.Count, renderStates);
 
