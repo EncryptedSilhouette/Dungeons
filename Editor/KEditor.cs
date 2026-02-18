@@ -61,7 +61,7 @@ public class KEditor
 
     public void Update(uint currentFrame)
     {
-        ref var tileMap = ref Palette.TileMap; 
+        ref var tileMap = ref Palette.TileLayers; 
         //value to downscale mouse/screen coords to layer's coords.
         var downScale = 1 / KProgram.DrawLayers[EDITOR_LAYER].GetScaleXRelativeTo(KProgram.Window.Size.X);
 
@@ -95,7 +95,7 @@ public class KEditor
     public void FrameUpdate(uint currentFrame, KRenderManager renderer)
     {
         ref var layer = ref renderer.DrawLayers[EDITOR_LAYER];
-        ref var tileMap = ref Palette.TileMap;
+        ref var tileMap = ref Palette.TileLayers;
         //value to downscale mouse/screen coords to layer's coords.
         var downScale = 1 / KProgram.DrawLayers[EDITOR_LAYER].GetScaleXRelativeTo(KProgram.Window.Size.X);
         //index of the grid cell that the mouse is hovering over. 

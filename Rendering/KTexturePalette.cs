@@ -1,34 +1,34 @@
 using SFML.Graphics;
 using SFML.System;
 
-public delegate void PaletteHandler(ref KTexturePalette palette);
+public delegate void PaletteHandler(KTexturePalette palette);
 
-public struct KTexturePalette
+public class KTexturePalette
 {
     public bool Enabled;
     public Color BackgroundColor;
     public Vector2f Position;
     public Texture Texture;
     public RenderTexture RenderTexture;
-    public KTileMap TileMap;
+    public KTileMap[] TileLayers;
 
     public event PaletteHandler? PaletteUpdated;
 
-    public KTexturePalette(Texture atlas, KTileMap tileMap)
+    public KTexturePalette(Texture atlas, KTileMap[] layers)
     {
         Enabled = false;
         BackgroundColor = new(100, 100, 100);
         Position = (0, 0);
 
         Texture = atlas;
-        TileMap = tileMap;
         
         RenderTexture = new(atlas.Size);
         RenderTexture.Clear(BackgroundColor);
         RenderTexture.Draw(new Sprite(atlas));
         RenderTexture.Display();
         
-        PaletteUpdated += (ref pal) => pal.Texture = pal.RenderTexture.Texture;
+        TileLayers = layers;
+        PaletteUpdated += (p) => p.Texture = p.RenderTexture.Texture;
     }
 
     public void Init(Texture atlas)
@@ -41,8 +41,6 @@ public struct KTexturePalette
 
     public void FrameUpdate(KRenderManager renderer, int layer)
     {
-        //if (TileMap.Enabled) TileMap.FrameUpdate(renderer, layer);
-
         renderer.DrawRect(new FloatRect(Position, (Vector2f)Texture.Size), BackgroundColor, layer);
         renderer.DrawRect(
             new FloatRect(Position, (Vector2f)Texture.Size), 
@@ -52,7 +50,7 @@ public struct KTexturePalette
     public void DrawBuffer(Vertex[] vertices, uint vCount, PrimitiveType primitive, RenderStates states)
     {
         RenderTexture.Draw(vertices, 0, vCount, primitive, states);
-        PaletteUpdated?.Invoke(ref this);
+        PaletteUpdated?.Invoke(this);
     }
 
     public void DrawBuffer(Vertex[] vertices, uint vCount, PrimitiveType primitive) => 

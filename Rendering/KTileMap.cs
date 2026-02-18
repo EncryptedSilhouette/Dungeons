@@ -44,11 +44,4 @@ public struct KTileMap
 
         renderer.DrawBuffer(Buffer, (uint)Buffer.Length, layer);
     }
-
-    // public void BakeTexture(in KTexturePalette texturePalette)
-    // {
-    //     var buffer = BakeVertices();
-    //     texturePalette.Clear();
-    //     texturePalette.DrawBuffer(buffer, (uint)buffer.Length, PrimitiveType.Triangles);
-    // }
 }
