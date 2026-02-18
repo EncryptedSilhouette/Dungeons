@@ -4,8 +4,8 @@ public struct KTileMap
 {
     public bool Enabled;
     public KGrid Grid;
-    public FloatRect[] TileSet;
     public Vertex[] Buffer;
+    public FloatRect[] TileSet;
 
     public KTileMap(in KGrid grid, FloatRect[] tileSet)
     {
@@ -41,7 +41,6 @@ public struct KTileMap
     public void FrameUpdate(KRenderManager renderer, int layer)
     {
         if (renderer.DrawLayers.Length <= layer) return;
-
         renderer.DrawBuffer(Buffer, (uint)Buffer.Length, layer);
     }
 }

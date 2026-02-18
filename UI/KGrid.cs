@@ -4,7 +4,6 @@ using SFML.System;
 
 public struct KGrid
 {
-    public bool Enabled;
     public int Columns;
     public int Rows;
     public int CellWidth;
@@ -14,10 +13,10 @@ public struct KGrid
     public uint[] Cells;
 
     public int CellCount => Columns * Rows;
-
+    public Vector2f CellSize => new(CellWidth, CellHeight);
+    
     public KGrid()
     {
-        Enabled = true;
         Rows = Columns = CellWidth = CellHeight = 0;
         LineColor = Color.White;
         Cells = [];
@@ -25,7 +24,6 @@ public struct KGrid
 
     public KGrid(int columns, int rows, int x, int y, int cellWidth, int cellHeight)
     {
-        Enabled = true;
         Columns = columns;
         Rows = rows;
         LineColor = Color.White;
