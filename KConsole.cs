@@ -1,3 +1,7 @@
+using System.Collections.Concurrent;
+
+public delegate void KCommandAction(object? Sender, EventArgs args);
+
 public ref struct KCommandResult 
 {
     public int Code; 
@@ -19,22 +23,44 @@ public ref struct KCommandResult
     }
 }
 
+public struct KCommand
+{
+    public object? Sender; 
+    public EventArgs Args;
+    public KCommandAction? Action;
+
+    public KCommand()
+    {
+        Sender = null;
+        Args = EventArgs.Empty;
+    }
+
+    public void Execute() => Action?.Invoke(Sender, Args);
+}
+
 public class KConsole
 {
+    private int _queueHead;
+    private int _queueTail;
     private bool _running;
     private string _userInput;
     private Task _task;
+    private KCommand[] _commandQueue;
+
 
     public KConsole()
     {
+        _queueHead = _queueTail = 0;
         _running = true;
         _userInput = string.Empty;
         _task = Task.CompletedTask;
+        _commandQueue = new KCommand[64];
     }
 
     private async Task Run()
     {
         KCommandResult result;
+
         while(_running)
         {
             _userInput = Console.ReadLine() ?? string.Empty;
@@ -100,6 +126,42 @@ public class KConsole
     {
         KProgram.Running = _running = false;
         return new(args);
+    }
+
+    public bool EnqueueCommand(in KCommand command)
+    {
+        lock (_commandQueue)
+        {
+            var x = (_queueHead + 1) % _commandQueue.Length;
+            
+            if (x != _queueTail)
+            {
+                _queueHead = x;
+                _commandQueue[_queueHead] = command;
+                return true;
+            }
+            else return false;
+        }
+    }
+
+    public bool DequeueCommand(out KCommand command)
+    {
+        lock (_commandQueue)
+        {
+            var x = (_queueTail + 1) % _commandQueue.Length;
+            
+            if (x != _queueHead)
+            {
+                command = _commandQueue[_queueHead];
+                _queueTail = x;
+                return true;
+            }
+            else
+            {
+                command = new();
+                return false;
+            }
+        }
     }
 
     private KCommandResult csv_trim(Span<string> args)

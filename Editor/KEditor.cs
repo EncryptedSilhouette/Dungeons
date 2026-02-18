@@ -49,13 +49,6 @@ public class KEditor
             Frames = []
         }, string.Empty);
 
-        Palette = 
-            new(new VertexBuffer(60_000, PrimitiveType.Triangles, VertexBuffer.UsageSpecifier.Stream),
-            )
-        {
-            
-        };
-
         //Palette = new();
         InputManager = inputManager;
     }
