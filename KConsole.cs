@@ -1,18 +1,21 @@
-public delegate void KCommandAction(object? Sender, string[] args);
+public delegate int KCommandAction(ref KCommandData data);
 
-public struct KCommandResult 
+public struct KCommandData 
 {
     public int Code; 
-    public Memory<string> Args;
+    public object? Sender;
+    public string[] Args;
     public Exception? Exception;
 
-    public KCommandResult()
+    public KCommandData()
     {
         Code = 0;
+        Args = [];
+        Sender = null;
         Exception = null;
     }
 
-    public KCommandResult(Memory<string> args, int code = 0, Exception? exception = null)
+    public KCommandData(string[] args, int code = 0, object? Sender = null, Exception? exception = null)
     {
         Args = args;
         Code = code;
@@ -22,40 +25,91 @@ public struct KCommandResult
 
 public struct KCommand
 {
-    public object? Sender; 
-    public string[] Args;
+    public KCommandData Data;
     public KCommandAction? Action;
 
-    public KCommand()
+    public KCommand(in KCommandData data, KCommandAction action)
     {
-        Sender = null;
-        Args = [];
+        Data = data;
+        Action = action;
     }
 
-    public void Execute() => Action?.Invoke(Sender, Args);
+    public KCommand(string[] args, KCommandAction action)
+    {
+        Data = new(args);
+        Action = action;
+    }
+
+    public void Execute() => Action?.Invoke(ref Data);
 }
 
+//A person with more time and money would care about the multithreading and shared state.
+//Luckily I am someone with neither and and will deal with the problem if and when it arrives.
+//I see the potential, but I see not an issue atm - EncSil 2/19/26. 
 public class KConsole
 {
-    private int _queueHead;
-    private int _queueTail;
+    private static int exit(ref KCommandData data)
+    {
+        if (data.Sender is KConsole c)
+        {
+            KProgram.Running = c._running = false;
+        }
+        return data.Code;
+    }
+
+    private static int fail(ref KCommandData data)
+    {
+        Console.WriteLine($"Failed Operation: {data.Code} ");
+        foreach (var a in data.Args) Console.Write($"{a} ");
+        Console.WriteLine($", Err:{data.Exception?.Message}");
+        return data.Code;
+    }
+
     private bool _running;
     private string _userInput;
     private Task _task;
-    private KCommand[] _commandQueue;
-
+    private Queue<KCommand> _queuedCommands;
 
     public KConsole()
     {
-        _queueHead = _queueTail = 0;
         _running = true;
         _userInput = string.Empty;
         _task = Task.CompletedTask;
-        _commandQueue = new KCommand[64];
+        _queuedCommands = new(128);
+    }
+
+    public void Update()
+    {
+        lock (_queuedCommands)
+        {
+            while (_queuedCommands.Count > 0)
+            {
+                _queuedCommands.Dequeue().Execute();
+            }
+        }
     }
 
     private async Task Run()
     {
+        //There's definitely a better way :) 
+        KCommand cmd_exit = new()
+        {
+            Data = new()
+            {
+                Sender = this,
+            },
+            Action = exit,
+        };
+        
+        KCommand cmd_fail = new()
+        {
+            Data = new()
+            {
+                Code = 1,
+            },
+            Action = fail,
+        };
+
         while(_running)
         {
             _userInput = Console.ReadLine() ?? string.Empty;
@@ -66,37 +120,40 @@ public class KConsole
 
             try
             {
-                switch (args[0])
+                switch(args[0])
                 {
-                    case "fail":
-                        
-                        break;
-
                     case "exit":
-                        //result = exit(args, 1);
+                        EnqueueCommand(cmd_exit);
                         break;
 
-                    case "test":
-                        Console.WriteLine("Working!");
+                    case "fail":
+                        EnqueueCommand(cmd_fail);
                         break;
-
-                    case "csv_etrim":
-                        //if (args.Length < 4) fail(args, 1);
-                        //args = csv_trim(args.Slice(1)).Args;
-                        break;
-
-                    default:
-                        Console.WriteLine("Unknown command.");
-                        break;                
                 }
             }
             catch (Exception e)
             {
-                //fail(args, 1, e);
+                var err = cmd_fail;
+                err.Data.Exception = e;
+                EnqueueCommand(err);
             }
         }
     }
 
+    public void EnqueueCommand(in KCommand command)
+    {
+        lock (_queuedCommands)
+        {
+            _queuedCommands.Enqueue(command);
+        }
+    }
+    public void DequeueCommand(out KCommand command) 
+    {
+        lock (_queuedCommands)
+        {
+            command = _queuedCommands.Dequeue();
+        }
+    }
     public void Start()
     {
         _running = true;
@@ -108,56 +165,6 @@ public class KConsole
         _running = false;
         await _task;
     }
-
-    public bool EnqueueCommand(in KCommand command)
-    {
-        lock (_commandQueue)
-        {
-            var x = (_queueHead + 1) % _commandQueue.Length;
-            
-            if (x != _queueTail)
-            {
-                _queueHead = x;
-                _commandQueue[_queueHead] = command;
-                return true;
-            }
-            else return false;
-        }
-    }
-
-    public bool DequeueCommand(out KCommand command)
-    {
-        lock (_commandQueue)
-        {
-            var x = (_queueTail + 1) % _commandQueue.Length;
-            
-            if (x != _queueHead)
-            {
-                command = _commandQueue[_queueHead];
-                _queueTail = x;
-                return true;
-            }
-            else
-            {
-                command = new();
-                return false;
-            }
-        }
-    }
-
-    //private KCommandResult fail(string[] args, int code, Exception? e = null)
-    //{
-    //    Console.WriteLine($"Failed Operation: {code} ");
-    //    foreach (var a in args) Console.Write($"{a} ");
-    //    Console.WriteLine($", {e?.Message}");
-    //    return new(args, code, e);
-    //}
-
-    //private KCommandResult exit(string[] args)
-    //{
-    //    KProgram.Running = _running = false;
-    //    return new(args);
-    //}
 
     //private KCommandResult csv_trim(string[] args)
     //{

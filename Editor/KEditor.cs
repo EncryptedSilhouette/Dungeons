@@ -31,13 +31,15 @@ public class KEditor
         
     public KButton Button;
     public KTexturePalette Palette;
+    public KRenderManager Renderer;
     public KInputManager InputManager;
 
     public Vector2i TileUnit => new(TILE_SIZE, TILE_SIZE);
 
-    public KEditor(KInputManager inputManager)
+    public KEditor(KRenderManager renderer, KInputManager inputManager)
     {
-        //_currentTool = KEditorTool.CURSOR;
+        Renderer = renderer;
+        InputManager = inputManager;
 
         Button = new KButton(new KSprite
         {
@@ -49,8 +51,20 @@ public class KEditor
             Frames = []
         }, string.Empty);
 
-        //Palette = new();
-        InputManager = inputManager;
+        VertexBuffer buffer = new(60_000, PrimitiveType.Triangles, VertexBuffer.UsageSpecifier.Stream);
+        KBufferRegion[] regions = KProgram.CreateBufferRegions([]);
+        KTileMap[] tileMaps =
+        [
+            new()
+            {
+                Grid = new()
+                {
+                    
+                }
+            }
+        ];
+
+        Palette = new(buffer, regions, tileMaps);
     }
 
     public void Init(KRenderManager renderer, KTextureAtlas atlas)
