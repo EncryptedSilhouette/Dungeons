@@ -62,15 +62,16 @@ public class KProgram
         Window.SetFramerateLimit(FRAME_RATE);
         Window.Closed += (_, _) => Running = false;
 
-        InputManager = new(Window);
-        Editor = new(InputManager);
-        DebugConsole = new();
-        Buffer = new(180_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
-        BufferRegions = CreateBufferRegions([60_000, 60_000, 60_000]);  
-        Renderer = new(Window, Buffer);
-        GameManager = new();
         Atlases = [];
         DrawLayers = [];
+        BufferRegions = CreateBufferRegions([60_000, 60_000, 60_000]);  
+        Buffer = new(180_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
+        
+        Renderer = new(Window, Buffer);
+        InputManager = new(Window);
+        Editor = new(Renderer, InputManager);
+        DebugConsole = new();
+        GameManager = new();
     }
 
     public static void Main()

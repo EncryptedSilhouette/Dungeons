@@ -57,10 +57,11 @@ public class KEditor
         [
             new()
             {
-                Grid = new()
-                {
-                    
-                }
+                Grid = new(
+                    (int)renderer.ScreenSize.X / 320,
+                    (int)renderer.ScreenSize.X / 240,
+                    0, 0, TILE_SIZE, TILE_SIZE
+                )
             }
         ];
 
