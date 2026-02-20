@@ -45,7 +45,6 @@ public class KProgram
     public static bool Running;
     public static KProgramState State;
     public static RenderWindow Window;
-    public static KConsole DebugConsole;
     public static KRenderManager Renderer;
     public static KEditor Editor;
     public static KInputManager InputManager;
@@ -70,18 +69,13 @@ public class KProgram
         Renderer = new(Window, Buffer);
         InputManager = new(Window);
         Editor = new(Renderer, InputManager);
-        DebugConsole = new();
         GameManager = new();
     }
 
     public static void Main()
     {
-        DebugConsole.Start();
-        
         LoadAndInit();
         Start();
-
-        DebugConsole.Stop();
     }
 
     public static void LoadAndInit()
