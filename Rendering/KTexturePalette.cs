@@ -1,4 +1,3 @@
-using System.Numerics;
 using SFML.Graphics;
 using SFML.System;
 
@@ -23,28 +22,23 @@ public class KTexturePalette
     public FloatRect SelectedTile;
     public Texture Texture;
     public RenderTexture RenderTexture;
-    public VertexBuffer VBuffer;
-    public KBufferRegion[] BufferRegions;
     public KTileMap[] TileLayers;
 
     public event PaletteHandler? PaletteUpdated;
 
-    public KTexturePalette(VertexBuffer vBuffer, KBufferRegion[] regions, KTileMap[] layers)
+    public KTexturePalette(KTileMap[] layers)
     {
+        TileLayers = layers;
+
         ShowPalette = Enabled = false;
         ActiveTileMap = 0;
         CurrentTool = KPaletteTools.NONE;
         BackgroundColor = new(100, 100, 100);
         Position = new();
         SelectedTile = new();
-        
         RenderTexture = new((640, 480));
         Texture = RenderTexture.Texture;
-        
-        VBuffer = vBuffer;
-        BufferRegions = regions;
-        TileLayers = layers;
-        
+    
         PaletteUpdated += (p) => p.Texture = p.RenderTexture.Texture;
     }
 
@@ -68,7 +62,7 @@ public class KTexturePalette
         ref var l = ref renderer.DrawLayers[layer];
         ref var tmap = ref TileLayers[ActiveTileMap];
         var downScale = 1 / l.GetScaleXRelativeTo(KProgram.Window.Size.X);
-        var index = tmap.Grid.CoordsToIndex(input.GetMousePosition(downScale));
+        tmap.Grid.CoordsToIndex(input.GetMousePosition(downScale), out int index);
 
         if (tmap.Enabled && input.IsMouseDown(KMouseStates.M1_DOWN))
         {   

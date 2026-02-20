@@ -57,24 +57,31 @@ public struct KGrid
         ArrayPool<Vertex>.Shared.Return(buffer);
     }
 
-    public int PositionToIndex(int column, int row) => column + row * Columns;
-    public (int, int) IndexToPosition(int index) => (index % Columns, index / Columns);
+    public bool PositionToIndex(int column, int row, out int index)
+    {
+        index = column + row * Columns;
 
-    public int CoordsToIndex(Vector2f pos, float scale = 1)
+        //Bounds checking. False if out of bounds.
+        return index >= 0 && index < Cells.Length;   
+    } 
+    
+    public bool CoordsToIndex(Vector2f pos, out int index, float scale = 1)
     {
         pos -= Position * scale;
         int column = (int)(pos.X / CellWidth * scale);
         int row = (int)(pos.Y / CellHeight * scale);
 
-        return PositionToIndex(column, row);   
+        PositionToIndex(column, row, out index);
+        
+        //Bounds checking. False if out of bounds.
+        return index >= 0 && index < Cells.Length;   
     }
 
-    public Vector2f IndexToCoords(int index, float scale = 1)
+    public Vector2f IndexToPosition(int index) => (index % Columns, index / Columns);
+
+    public Vector2f IndexToCoords(int index, float scale = 1) => new()
     {
-        return new()
-        {
-            X = Position.X + (int)(index % Columns) * CellWidth * scale,
-            Y = Position.Y + (int)(index / Columns) * CellHeight * scale,
-        };
-    }
+        X = Position.X + (int)(index % Columns) * CellWidth * scale,
+        Y = Position.Y + (int)(index / Columns) * CellHeight * scale,
+    };
 }

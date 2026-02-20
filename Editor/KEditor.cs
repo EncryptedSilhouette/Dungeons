@@ -51,21 +51,15 @@ public class KEditor
             Frames = []
         }, string.Empty);
 
-        VertexBuffer buffer = new(60_000, PrimitiveType.Triangles, VertexBuffer.UsageSpecifier.Stream);
-        KBufferRegion[] regions = KProgram.CreateBufferRegions([]);
         KTileMap[] tileMaps =
         [
             new()
             {
-                Grid = new(
-                    (int)renderer.ScreenSize.X / 320,
-                    (int)renderer.ScreenSize.X / 240,
-                    0, 0, TILE_SIZE, TILE_SIZE
-                )
+                Grid = new(200, 200, 0, 0, TILE_SIZE, TILE_SIZE)
             }
         ];
 
-        Palette = new(buffer, regions, tileMaps);
+        Palette = new(tileMaps);
     }
 
     public void Init(KRenderManager renderer, KTextureAtlas atlas)
