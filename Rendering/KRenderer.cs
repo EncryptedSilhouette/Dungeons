@@ -136,8 +136,6 @@ public class KRenderManager
 
     public void DrawBuffer(Vertex[] vertices, uint vCount, int layer = SCREEN_LAYER)
     {
-        //Unholy.
-        
         if (layer < 0)
         {
             if (ScreenRegion.Count + vCount > ScreenRegion.Capacity) vCount = ScreenRegion.Capacity - ScreenRegion.Count;

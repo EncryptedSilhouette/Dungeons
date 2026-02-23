@@ -53,7 +53,21 @@ public class KTexturePalette
     public void Update(KInputManager input)
     {
         //Enables/disables parts of the editor
-        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.Q)) ShowPalette = !ShowPalette;
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.L))
+        {
+            TileLayers[ActiveTileMap].Enabled = !TileLayers[ActiveTileMap].Enabled;
+        }
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.F))
+        {
+            SwitchToLayer((ActiveTileMap + 1) % TileLayers.Length);
+        }
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.E)) 
+        {
+            ShowPalette = !ShowPalette;
+            CurrentTool = ShowPalette? 
+                KPaletteTools.EYE_DROPPER :
+                KPaletteTools.PAINT;
+        }
         if (input.IsKeyPressed(SFML.Window.Keyboard.Key.G)) ShowGrid = !ShowGrid; 
     }
 
@@ -103,6 +117,11 @@ public class KTexturePalette
             }
         }
 
+        for (int i = 0; i < TileLayers.Length; i++)
+        {
+            TileLayers[i].FrameUpdate(renderer, layer);
+        }
+
         if (ShowPalette)
         {    
             renderer.DrawRect(new FloatRect(Position, (Vector2f)Texture.Size), BackgroundColor, layer);
@@ -116,6 +135,15 @@ public class KTexturePalette
         renderer.DrawRect(
             new FloatRect(tmap.Grid.IndexToCoords(index), tmap.Grid.CellSize), 
             new(255, 255, 0, 150), layer);
+
+        renderer.DrawLine((1,1), (renderer.ScreenSize.X, 1), 
+            new Color(200, 255, 0), lineLayer);
+        renderer.DrawLine((renderer.ScreenSize.X,1), (Vector2f)renderer.ScreenSize, 
+            new Color(200, 255, 0), lineLayer);
+        renderer.DrawLine((Vector2f)renderer.ScreenSize, (1, renderer.ScreenSize.Y), 
+            new Color(200, 255, 0), lineLayer);
+        renderer.DrawLine((0, renderer.ScreenSize.Y), (1,1), 
+            new Color(200, 255, 0), lineLayer);
     }
 
     public void DrawBuffer(Vertex[] vertices, uint vCount, PrimitiveType primitive, RenderStates states)
@@ -128,4 +156,9 @@ public class KTexturePalette
         DrawBuffer(vertices, vCount, primitive, new(Texture)); 
 
     public void Clear() => RenderTexture.Clear(BackgroundColor);
+
+    public void SwitchToLayer(int layer)
+    {
+        ActiveTileMap = layer;  
+    }
 }

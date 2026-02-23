@@ -53,9 +53,13 @@ public class KEditor
 
         KTileMap[] tileMaps =
         [
-            new()
+            new(new(200, 200, 0, 0, TILE_SIZE, TILE_SIZE))
             {
-                Grid = new(200, 200, 0, 0, TILE_SIZE, TILE_SIZE)
+                Enabled = true    
+            },
+            new(new(200, 200, 0, 0, TILE_SIZE, TILE_SIZE))
+            {
+                Enabled = true    
             }
         ];
 
@@ -64,6 +68,11 @@ public class KEditor
 
     public void Init(KRenderManager renderer, KTextureAtlas atlas)
     {
+        renderer.Window.Resized += (_, e) =>
+        {
+            ref var ll = ref KProgram.Renderer.DrawLayers[(int)KEditorLayers.LINE_LAYER];
+            ll.Size = (Vector2f)e.Size;
+        };
         Palette.Init(atlas.Texture);
     }
 
@@ -74,6 +83,11 @@ public class KEditor
 
         if (InputManager.IsKeyPressed(Keyboard.Key.Q)) Palette.Enabled = !Palette.Enabled; 
         
+        if (Palette.Enabled)
+        {
+            Palette.Update(InputManager);
+        }
+
         if (!Palette.Enabled) Button.Update(InputManager, InputManager.GetMousePosition(downScale));
     }
 

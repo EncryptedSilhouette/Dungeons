@@ -63,8 +63,8 @@ public class KProgram
 
         Atlases = [];
         DrawLayers = [];
-        BufferRegions = CreateBufferRegions([60_000, 60_000, 60_000]);  
-        Buffer = new(180_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
+        BufferRegions = CreateBufferRegions([6_000_000, 6_000_000, 6_000_000]);  
+        Buffer = new(18_000_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
         
         Renderer = new(Window, Buffer);
         InputManager = new(Window);
@@ -101,7 +101,7 @@ public class KProgram
             {
                 IsStatic = false,
                 Upscale = true,
-                Size = (320, 240),
+                Size = (Vector2f)Window.Size,
                 Primitive = PrimitiveType.Lines,
                 States = RenderStates.Default,
                 Region = BufferRegions[1],
