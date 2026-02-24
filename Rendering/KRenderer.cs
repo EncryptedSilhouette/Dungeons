@@ -89,6 +89,7 @@ public class KRenderManager
     public KBufferRegion ScreenRegion;
     public RenderWindow Window;
     public VertexBuffer VertexBuffer;
+    public KTextHandler TextHandler;
     public KDrawLayer[] DrawLayers;
 
     public float aspect => Window.Size.Y / Window.Size.X;
@@ -101,15 +102,16 @@ public class KRenderManager
         _drawBuffer = new Vertex[6];
 
         Window = window;
+        TextHandler = new(this);
         VertexBuffer = buffer;
         DrawLayers = [];
     }
 
-    public void Init(KBufferRegion screenRegion, KDrawLayer[] drawLayers)
+    public void Init(KBufferRegion screenRegion, KDrawLayer[] drawLayers, KTextLayer[] textLayers)
     {
         ScreenRegion = screenRegion;
         DrawLayers = drawLayers;
-
+        TextHandler.Init(textLayers);
         Window.Resized += ResizeView;
     }
 
@@ -117,21 +119,27 @@ public class KRenderManager
     {     
         for (int i = 0; i < DrawLayers.Length; i++)
         {
-            ref var l = ref DrawLayers[i];
-            var renderStates = l.States;
-
-            if (VertexBuffer.PrimitiveType != l.Primitive) 
-                VertexBuffer.PrimitiveType = l.Primitive;
-
-            if (l.Upscale)
-                renderStates.Transform
-                    .Scale(((float)Window.Size.X / l.Size.X, 
-                            (float)Window.Size.X / l.Size.X));
-
-            VertexBuffer.Draw(Window, l.Region.Offset, l.Region.Count, renderStates);
-
-            if (!l.IsStatic) l.Region.Count = 0;
+            DrawLayer(ref DrawLayers[i]);
         }
+
+        TextHandler.FrameUpdate(this);
+    }
+
+    public void DrawLayer(ref KDrawLayer drawLayer)
+    {
+        var renderStates = drawLayer.States;
+
+        if (VertexBuffer.PrimitiveType != drawLayer.Primitive) 
+            VertexBuffer.PrimitiveType = drawLayer.Primitive;
+
+        if (drawLayer.Upscale)
+            renderStates.Transform
+                .Scale(((float)Window.Size.X / drawLayer.Size.X, 
+                        (float)Window.Size.X / drawLayer.Size.X));
+
+        VertexBuffer.Draw(Window, drawLayer.Region.Offset, drawLayer.Region.Count, renderStates);
+
+        if (!drawLayer.IsStatic) drawLayer.Region.Count = 0;
     }
 
     public void DrawBuffer(Vertex[] vertices, uint vCount, int layer = SCREEN_LAYER)

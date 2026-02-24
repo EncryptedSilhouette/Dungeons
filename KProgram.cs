@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using SFML.Graphics;
+﻿using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 
@@ -50,6 +49,7 @@ public class KProgram
     public static KInputManager InputManager;
     public static KGameManager GameManager;
     public static VertexBuffer Buffer;
+    public static Font[] Fonts;
     public static KBufferRegion[] BufferRegions;
     public static KTextureAtlas[] Atlases;
     public static KDrawLayer[] DrawLayers;
@@ -61,10 +61,11 @@ public class KProgram
         Window.SetFramerateLimit(FRAME_RATE);
         Window.Closed += (_, _) => Running = false;
 
+        Fonts = [];
         Atlases = [];
         DrawLayers = [];
-        BufferRegions = CreateBufferRegions([6_000_000, 6_000_000, 6_000_000]);  
-        Buffer = new(18_000_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
+        BufferRegions = CreateBufferRegions([3_000_000, 3_000_000, 3_000_000, 3_000_000]);  
+        Buffer = new(12_000_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
         
         Renderer = new(Window, Buffer);
         InputManager = new(Window);
@@ -80,6 +81,24 @@ public class KProgram
 
     public static void LoadAndInit()
     {
+
+        foreach (var filePath in Directory.EnumerateFiles("Assets"))
+        {
+            if (filePath is null) continue;
+            Console.WriteLine($"[init] found: {filePath}");
+
+            //switch (Path.GetExtension(filePath))
+            //{
+            //    case ".tff":
+            //        break;
+
+            //    case ".csv":
+            //        break;
+            //}
+        }
+
+        Fonts = [ new("Assets/Roboto-Black.ttf") ];
+
         Atlases = 
         [
             LoadTextureAtlas(ATLAS_FILEPATH)
@@ -117,7 +136,25 @@ public class KProgram
             },
         ];
 
-        Renderer.Init(BufferRegions[2], DrawLayers);
+        KTextLayer[] TextLayers =
+        [
+            new()
+            {
+                FontSize = 32,
+                Font = Fonts[0],
+                DrawLayer = new()
+                {
+                    IsStatic = false,
+                    Upscale = false,
+                    Size = (Vector2f)Window.Size,
+                    Primitive = PrimitiveType.Triangles,
+                    States = new(Fonts[0].GetTexture(14)),
+                    Region = BufferRegions[3],
+                },
+            }
+        ];
+
+        Renderer.Init(BufferRegions[2], DrawLayers, TextLayers);
         Editor.Init(Renderer, Atlases[0]);
     }
 

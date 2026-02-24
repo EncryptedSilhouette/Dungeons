@@ -6,15 +6,14 @@ public struct KTextLayer
 {
     public byte FontSize; 
     public Font Font;
-    public KBufferRegion StaticRegion;
+    //public KBufferRegion StaticRegion;
     public KDrawLayer DrawLayer;
-    public RenderTexture RenderTexture;
 
-    public KTextLayer(RenderTexture renderTexture, KBufferRegion staticRegion, Vector2f size, Font font, byte fontSize, bool isStatic = false)
+    public KTextLayer(Vector2f size, Font font, byte fontSize, bool isStatic = false)
     {
         FontSize = fontSize;
         Font = font;
-        StaticRegion = staticRegion;
+        //StaticRegion = staticRegion;
         DrawLayer = new()
         {
             IsStatic = isStatic,
@@ -24,7 +23,6 @@ public struct KTextLayer
             Region = new(),
             Atlas = new(),
         };
-        RenderTexture = renderTexture;
     }
 
     public void StaticDrawText()
@@ -35,6 +33,24 @@ public struct KTextLayer
     public void DrawText()
     {
         
+    }
+
+    public Glyph GetGlyph(byte ch, bool bold, bool updateTexture = false)
+    {
+        var glyph = Font.GetGlyph(ch, FontSize, bold, 0);
+        
+        if (updateTexture) DrawLayer.States.Texture = Font.GetTexture(FontSize);
+        
+        return glyph;
+    }
+
+    public Glyph GetGlyph(KGlyphHandle glyphHandle, bool updateTexture = false)
+    {
+        var glyph = Font.GetGlyph(glyphHandle.Chr, glyphHandle.Size, glyphHandle.Bold, 0);
+        
+        if (updateTexture) DrawLayer.States.Texture = Font.GetTexture(FontSize);
+        
+        return glyph;
     }
 }
 
@@ -70,8 +86,6 @@ public class KTextHandler
 {
     private KRenderManager _renderer;
     private Dictionary<KGlyphHandle, Glyph> _glyphCache;
-
-    public Font[] Fonts;
     public KTextLayer[] TextLayers;
 
     public KTextHandler(KRenderManager renderer)
@@ -79,14 +93,12 @@ public class KTextHandler
         _renderer = renderer;
         _glyphCache = new(256);
 
-        Fonts = [];
         TextLayers = [];
     }
 
-    public void Init(Font[] fonts, KTextLayer[] textLayers)
+    public void Init(KTextLayer[] textLayers)
     {
         TextLayers = textLayers;
-        Fonts = fonts;
     }
 
     public void Update()
@@ -96,31 +108,100 @@ public class KTextHandler
 
     public void FrameUpdate(KRenderManager renderer)
     {
-        
+        for (int i = 0; i < TextLayers.Length; i++)
+        {
+            renderer.DrawLayer(ref TextLayers[i].DrawLayer);
+        }
     }
 
-    public void DrawText(string text, byte textLayer, bool bold)
+    public void DrawBuffer(Vertex[] vertices, uint vCount, int layer)
     {
-        var vCount = 0;
-        var buffer = ArrayPool<Vertex>.Shared.Rent(text.Length * 6);
+        ref var region = ref TextLayers[layer].DrawLayer.Region;
+        if (region.Count + vCount > region.Capacity) vCount = region.Capacity - region.Count;
 
-        var chars = text.AsSpan();
-        ref var layer = ref TextLayers[textLayer];
-        int xOffSet;
+        _renderer.VertexBuffer.Update(vertices, vCount, region.Offset + region.Count);
+        region.Count += vCount;
+    }
 
-        for (int i = 0; i < chars.Length; i++)
+    public void DrawText(string text, Vector2f pos, byte textLayer, Color color, byte lnSpacing = 0, bool bold = false, uint wrapThres = 0)
+    {
+        var buffer = ArrayPool<Vertex>.Shared.Rent(text.Length * 6); 
+        ref var l = ref TextLayers[textLayer];
+
+        for (int i = 0; i < text.Length; i++)
         {
+            var handle = new KGlyphHandle(textLayer, text[i], l.FontSize, bold);
+            var bounds = new FloatRect(pos, (0,0));
 
-            var ch = chars[i];
-
-            if (_glyphCache.TryGetValue(new KGlyphHandle(textLayer, ch, layer.FontSize, bold), out Glyph glyph))
+            if (text[i] == '\n')
             {
-                var b = glyph.Bounds;
-                var t = glyph.TextureRect; 
-                //glyph.Advance;           
-
+                pos.X = 0;
+                pos.Y = l.FontSize + lnSpacing;
+                buffer[i * 6] = default;
+                buffer[i * 6 + 1] = default;
+                buffer[i * 6 + 2] = default;
+                buffer[i * 6 + 3] = default;
+                buffer[i * 6 + 4] = default;
+                buffer[i * 6 + 5] = default;
+                continue;    
             }
+
+            if (!_glyphCache.TryGetValue(handle, out Glyph glyph))
+            {
+                glyph = l.GetGlyph(handle, true);
+                _glyphCache.Add(handle, glyph);
+            }
+
+            buffer[i * 6] = new Vertex 
+            { 
+                Position = pos + glyph.Bounds.Position,
+                Color = color,
+                TexCoords = (Vector2f)glyph.TextureRect.Position,
+            };
+            buffer[i * 6 + 1] = new Vertex 
+            { 
+                Position = (pos.X + glyph.Bounds.Left + glyph.Bounds.Width, pos.Y + glyph.Bounds.Top),
+                Color = color,
+                TexCoords = (glyph.TextureRect.Left + glyph.TextureRect.Width, glyph.TextureRect.Top),
+            };
+            buffer[i * 6 + 2] = new Vertex 
+            { 
+                Position = (pos.X + glyph.Bounds.Left, pos.Y + glyph.Bounds.Top + glyph.Bounds.Height),
+                Color = color,
+                TexCoords = (glyph.TextureRect.Left, glyph.TextureRect.Top + glyph.TextureRect.Height),
+            };
+
+            buffer[i * 6 + 3] = new Vertex 
+            { 
+                Position = (pos.X + glyph.Bounds.Left + glyph.Bounds.Width, pos.Y + glyph.Bounds.Top),
+                Color = color,
+                TexCoords = (glyph.TextureRect.Left + glyph.TextureRect.Width, glyph.TextureRect.Top),
+            };
+            buffer[i * 6 + 4] = new Vertex 
+            { 
+                Position = pos + glyph.Bounds.Position + glyph.Bounds.Size,
+                Color = color,
+                TexCoords = (Vector2f)(glyph.TextureRect.Position + glyph.TextureRect.Size),
+            };
+            buffer[i * 6 + 5] = new Vertex 
+            { 
+                Position = (pos.X + glyph.Bounds.Left, pos.Y + glyph.Bounds.Top + glyph.Bounds.Height),
+                Color = color,
+                TexCoords = (glyph.TextureRect.Left, glyph.TextureRect.Top + glyph.TextureRect.Height),
+            };
+        
+            if (wrapThres > 0 && bounds.Size.X + glyph.Advance > wrapThres)
+            {
+                pos.X = 0;
+                pos.Y += l.FontSize + lnSpacing;
+            }
+
+            pos.X += glyph.Advance;
         }
+
+        DrawBuffer(buffer, (uint)text.Length * 6, 0);
+
+        ArrayPool<Vertex>.Shared.Return(buffer);
     }
 }
 

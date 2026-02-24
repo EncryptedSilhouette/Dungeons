@@ -14,7 +14,7 @@ public class KEditor
     {
         EDITOR_LAYER,
         LINE_LAYER,
-        LAYER_COUNT,
+        TEXT_LAYER = 3, 
     }
 
     enum KTileLayers : int
@@ -101,5 +101,7 @@ public class KEditor
         {
             Button.FrameUpdate(renderer, (int)KEditorLayers.EDITOR_LAYER);
         }
+
+        //renderer.TextHandler.DrawText("TestLineA.\nTestLineB\nTestLineC\n",(500, 500), 0, Color.White);
     }
 }

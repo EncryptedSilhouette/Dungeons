@@ -9,17 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="SFML.Net" Version="3.0.0" />
-    <None Update="Assets\\atlas.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Assets\\atlas.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Assets\\tileset.csv">
+    <None Update="Assets\\atlas.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\\Roboto-Black.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-
-
 </Project>
