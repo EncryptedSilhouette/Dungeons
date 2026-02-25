@@ -102,6 +102,13 @@ public class KEditor
             Button.FrameUpdate(renderer, (int)KEditorLayers.EDITOR_LAYER);
         }
 
-        //renderer.TextHandler.DrawText("TestLineA.\nTestLineB\nTestLineC\n",(500, 500), 0, Color.White);
+        //C# verbatim strings are a PAIN IN THE ASS.
+        renderer.TextHandler.DrawText(
+    @"Help:
+    q: toggle palette,
+    e: toggle texture
+    l: toggle layer
+    f: next"
+            ,(500, 500), 0, Color.White);
     }
 }

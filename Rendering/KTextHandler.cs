@@ -126,17 +126,21 @@ public class KTextHandler
     public void DrawText(string text, Vector2f pos, byte textLayer, Color color, byte lnSpacing = 0, bool bold = false, uint wrapThres = 0)
     {
         var buffer = ArrayPool<Vertex>.Shared.Rent(text.Length * 6); 
+        var bounds = new FloatRect(pos, (0,0));
         ref var l = ref TextLayers[textLayer];
+
+        Console.WriteLine($"st {pos.X}");
 
         for (int i = 0; i < text.Length; i++)
         {
             var handle = new KGlyphHandle(textLayer, text[i], l.FontSize, bold);
-            var bounds = new FloatRect(pos, (0,0));
 
             if (text[i] == '\n')
             {
-                pos.X = 0;
-                pos.Y = l.FontSize + lnSpacing;
+                pos.X = bounds.Position.X;
+                pos.Y += l.FontSize + lnSpacing;
+                Console.WriteLine($"nl");
+                
                 buffer[i * 6] = default;
                 buffer[i * 6 + 1] = default;
                 buffer[i * 6 + 2] = default;
@@ -151,6 +155,8 @@ public class KTextHandler
                 glyph = l.GetGlyph(handle, true);
                 _glyphCache.Add(handle, glyph);
             }
+            
+            Console.WriteLine($"{i} {text[i]} {pos.X}");
 
             buffer[i * 6] = new Vertex 
             { 
@@ -190,13 +196,13 @@ public class KTextHandler
                 TexCoords = (glyph.TextureRect.Left, glyph.TextureRect.Top + glyph.TextureRect.Height),
             };
         
+            pos.X += glyph.Advance;
+
             if (wrapThres > 0 && bounds.Size.X + glyph.Advance > wrapThres)
             {
-                pos.X = 0;
+                pos.X = bounds.Position.X;
                 pos.Y += l.FontSize + lnSpacing;
             }
-
-            pos.X += glyph.Advance;
         }
 
         DrawBuffer(buffer, (uint)text.Length * 6, 0);

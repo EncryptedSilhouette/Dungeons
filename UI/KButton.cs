@@ -70,5 +70,6 @@ public struct KButton
     public void FrameUpdate(KRenderManager renderManager, int layer)
     {
         renderManager.DrawSprite(Sprite, Color, layer);
+        //renderManager.TextHandler.DrawText();
     }
 }
