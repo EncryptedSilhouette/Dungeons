@@ -9,7 +9,7 @@ public struct KButton
     public Color HeldColor;
     public Color DownColor;
     public KSprite Sprite;
-    //public KText TextBox;
+    public KText Text;
 
     public Action? OnHover;
     public Action? OnPressed;
@@ -17,12 +17,12 @@ public struct KButton
     public Action? OnReleased;
     public Action? OnExit;
 
-    public KButton(KSprite sprite, string text)
+    public KButton(KSprite sprite, KText text)
     {
         Color = new(200, 200, 200);
         HeldColor = new(125, 125, 125);
         DownColor = new(100, 100, 100);
-        //TextBox = new(text, new Vertex[text.Length * 6]);
+        Text = text;
         Sprite = sprite;
     }
 
@@ -61,15 +61,10 @@ public struct KButton
         }
     }
 
-    public void FrameUpdate(KRenderManager renderManager)
+    public void FrameUpdate(KRenderManager renderManager, byte screenLayer, byte textLayer)
     {
         renderManager.DrawSprite(Sprite, Color);
-        //renderManager.DrawText(TextBox, Sprite.Bounds.Position.X, Sprite.Bounds.Position.Y, wrapThreshold: (int)Sprite.Bounds.Width, layer: 1);
-    }
-
-    public void FrameUpdate(KRenderManager renderManager, int layer)
-    {
-        renderManager.DrawSprite(Sprite, Color, layer);
-        //renderManager.TextHandler.DrawText();
+        renderManager.TextHandler.DrawText(Text, Sprite.Bounds.Position, screenLayer, textLayer);
+        Console.WriteLine(Sprite.Bounds.Position);
     }
 }

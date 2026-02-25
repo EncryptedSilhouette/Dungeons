@@ -38,6 +38,17 @@ public class KProgram
         NORMAL = 0
     }
 
+    public enum KLayers : int
+    {
+        //General layers
+        SCREEN = -1,
+        WORLD = 0,
+        LINE = 1,
+
+        //Text layers
+        TEXT = 0, 
+    }
+
     public const uint FRAME_RATE = 60;
     public static readonly string ATLAS_FILEPATH = "Assets/atlas.csv";
     
@@ -124,15 +135,6 @@ public class KProgram
                 Primitive = PrimitiveType.Lines,
                 States = RenderStates.Default,
                 Region = BufferRegions[1],
-            },
-            new()
-            {
-                IsStatic = false,
-                Upscale = false,
-                Size = (Vector2f)Window.Size,
-                Primitive = PrimitiveType.Triangles,
-                States = RenderStates.Default,
-                Region = BufferRegions[2],
             },
         ];
 

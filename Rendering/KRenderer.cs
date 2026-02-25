@@ -87,6 +87,7 @@ public class KRenderManager
     private Vertex[] _drawBuffer;
 
     public KBufferRegion ScreenRegion;
+    public RenderStates States;
     public RenderWindow Window;
     public VertexBuffer VertexBuffer;
     public KTextHandler TextHandler;
@@ -101,6 +102,7 @@ public class KRenderManager
         _view = window.DefaultView;
         _drawBuffer = new Vertex[6];
 
+        States = RenderStates.Default;
         Window = window;
         TextHandler = new(this);
         VertexBuffer = buffer;
@@ -122,6 +124,10 @@ public class KRenderManager
             DrawLayer(ref DrawLayers[i]);
         }
 
+        VertexBuffer.PrimitiveType = PrimitiveType.Triangles;
+        VertexBuffer.Draw(Window, ScreenRegion.Offset, ScreenRegion.Count, States);
+        ScreenRegion.Count = 0;
+        
         TextHandler.FrameUpdate(this);
     }
 
@@ -148,7 +154,7 @@ public class KRenderManager
         {
             if (ScreenRegion.Count + vCount > ScreenRegion.Capacity) vCount = ScreenRegion.Capacity - ScreenRegion.Count;
 
-            VertexBuffer.Update(vertices, vCount, ScreenRegion.Offset);
+            VertexBuffer.Update(vertices, vCount, ScreenRegion.Offset + ScreenRegion.Count);
             ScreenRegion.Count += vCount;
         }
         else

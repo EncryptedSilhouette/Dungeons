@@ -10,13 +10,6 @@ public enum KEditorTool
 
 public class KEditor
 {
-    enum KEditorLayers : int
-    {
-        EDITOR_LAYER,
-        LINE_LAYER,
-        TEXT_LAYER = 3, 
-    }
-
     enum KTileLayers : int
     {
         TILE_LAYER_0,
@@ -44,12 +37,12 @@ public class KEditor
         Button = new KButton(new KSprite
         {
             Rotation = 0.0f,
-            Color = Color.White,
+            Color = new(200, 200, 200),
             Rotocenter = (0, 0),
-            Bounds = new((2, 2), (8, 4)),
+            Bounds = new((16, 16), (80, 40)),
             TextureBounds = new(),
             Frames = []
-        }, string.Empty);
+        }, new("Test", Color.White, 0, size: 14));
 
         KTileMap[] tileMaps =
         [
@@ -70,7 +63,7 @@ public class KEditor
     {
         renderer.Window.Resized += (_, e) =>
         {
-            ref var ll = ref KProgram.Renderer.DrawLayers[(int)KEditorLayers.LINE_LAYER];
+            ref var ll = ref KProgram.Renderer.DrawLayers[(int)KProgram.KLayers.LINE];
             ll.Size = (Vector2f)e.Size;
         };
         Palette.Init(atlas.Texture);
@@ -79,7 +72,7 @@ public class KEditor
     public void Update(uint currentFrame)
     {
         //value to downscale mouse/screen coords to layer's coords.
-        var downScale = 1 / KProgram.DrawLayers[(int)KEditorLayers.EDITOR_LAYER].GetScaleXRelativeTo(KProgram.Window.Size.X);
+        var downScale = 1 / KProgram.DrawLayers[(int)KProgram.KLayers.WORLD].GetScaleXRelativeTo(KProgram.Window.Size.X);
 
         if (InputManager.IsKeyPressed(Keyboard.Key.Q)) Palette.Enabled = !Palette.Enabled; 
         
@@ -88,27 +81,25 @@ public class KEditor
             Palette.Update(InputManager);
         }
 
-        if (!Palette.Enabled) Button.Update(InputManager, InputManager.GetMousePosition(downScale));
+        if (!Palette.Enabled) Button.Update(InputManager, InputManager.GetMousePosition());
     }
 
     public void FrameUpdate(uint currentFrame, KRenderManager renderer)
     {
         if (Palette.Enabled) Palette.FrameUpdate(renderer, InputManager, 
-            (int)KEditorLayers.EDITOR_LAYER, 
-            (int)KEditorLayers.LINE_LAYER);
+            (int)KProgram.KLayers.WORLD, 
+            (int)KProgram.KLayers.LINE);
 
         if (!Palette.Enabled) 
         {
-            Button.FrameUpdate(renderer, (int)KEditorLayers.EDITOR_LAYER);
+            Button.FrameUpdate(renderer, (byte)KProgram.KLayers.WORLD, (byte)KProgram.KLayers.TEXT);
+            renderer.TextHandler.DrawText(
+@"Help:
+Q toggle palette,
+E: toggle texture
+L: toggle layer
+F: next"
+                ,(16, 64), 0, Color.White);
         }
-
-        //C# verbatim strings are a PAIN IN THE ASS.
-        renderer.TextHandler.DrawText(
-    @"Help:
-    q: toggle palette,
-    e: toggle texture
-    l: toggle layer
-    f: next"
-            ,(500, 500), 0, Color.White);
     }
 }
