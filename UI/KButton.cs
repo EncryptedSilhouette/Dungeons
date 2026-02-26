@@ -1,6 +1,16 @@
 using SFML.Graphics;
 using SFML.System;
 
+[Flags]
+public enum KButtonState : byte
+{
+    NONE = 0,
+    HOVER = 1,
+    PRESSED = 1 << 1,
+    HELD = 1 << 2,
+    RELEASED = 1 << 3
+}
+
 public struct KButton
 {
     private bool _isDown = false;
@@ -9,13 +19,8 @@ public struct KButton
     public Color HeldColor;
     public Color DownColor;
     public KSprite Sprite;
+    public KButtonState States;
     public KText Text;
-
-    public Action? OnHover;
-    public Action? OnPressed;
-    public Action? OnHold;
-    public Action? OnReleased;
-    public Action? OnExit;
 
     public KButton(KSprite sprite, KText text)
     {
@@ -30,7 +35,7 @@ public struct KButton
     {
         if (KProgram.CheckPointRectCollision(position, Sprite.Bounds))
         {
-            OnHover?.Invoke();
+            States |= KButtonState.HOVER;
             Color = HeldColor;
 
             if (inputManager.IsMouseDown(KMouseStates.M1_DOWN))
@@ -38,26 +43,26 @@ public struct KButton
                 if (!_isDown && !inputManager.PrevMouseStates.HasFlag(KMouseStates.M1_DOWN))
                 {
                     _isDown = true;
-                    OnPressed?.Invoke();
+                    States |= KButtonState.PRESSED;
                 }
-                OnHold?.Invoke();
+                States |= KButtonState.HELD;
             }
             else if (_isDown)
             {
                 _isDown = false;
-                OnReleased?.Invoke();
+                States = KButtonState.RELEASED;
             }
         }
         else if (_isDown)
         {
             _isDown = false;
             Color = Sprite.Color;
-            OnReleased?.Invoke();
-            OnExit?.Invoke();
+            States = KButtonState.RELEASED;
         }
         else
         {
             Color = Sprite.Color;
+            States = KButtonState.NONE;
         }
     }
 
@@ -67,4 +72,7 @@ public struct KButton
         renderManager.TextHandler.DrawText(Text, Sprite.Bounds.Position, screenLayer, textLayer);
         Console.WriteLine(Sprite.Bounds.Position);
     }
+
+    public bool CheckState(KButtonState states) =>
+        States.HasFlag(states);
 }
