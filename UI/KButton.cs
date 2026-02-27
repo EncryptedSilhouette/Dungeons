@@ -36,7 +36,7 @@ public struct KButton
         if (KProgram.CheckPointRectCollision(position, Sprite.Bounds))
         {
             States |= KButtonState.HOVER;
-            Color = HeldColor;
+            //Color = HeldColor;
 
             if (inputManager.IsMouseDown(KMouseStates.M1_DOWN))
             {
@@ -56,21 +56,24 @@ public struct KButton
         else if (_isDown)
         {
             _isDown = false;
-            Color = Sprite.Color;
+            //Color = Sprite.Color;
             States = KButtonState.RELEASED;
         }
         else
         {
-            Color = Sprite.Color;
+            //Color = Sprite.Color;
             States = KButtonState.NONE;
         }
     }
 
-    public void FrameUpdate(KRenderManager renderManager, byte screenLayer, byte textLayer)
+    public void FrameUpdate(KRenderManager renderManager, int textLayer)
     {
-        renderManager.DrawSprite(Sprite, Color);
-        renderManager.TextHandler.DrawText(Text, Sprite.Bounds.Position, screenLayer, textLayer);
-        Console.WriteLine(Sprite.Bounds.Position);
+        renderManager.TextHandler.DrawText(Text, Sprite.Bounds.Position, textLayer, out FloatRect b);
+
+        var color = States.HasFlag(KButtonState.HOVER) ? 
+            HeldColor :
+            Sprite.Color;
+        renderManager.DrawSprite(Sprite, color);
     }
 
     public bool CheckState(KButtonState states) =>

@@ -149,11 +149,11 @@ public class KTextHandler
         region.Count += vCount;
     }
 
-    public void DrawText(string text, Vector2f pos, int textLayer, Color color, byte lnSpacing = 0, bool bold = false, uint wrapThres = 0)
+    public void DrawText(string text, Vector2f pos, int textLayer, Color color, out FloatRect bounds, byte lnSpacing = 0, bool bold = false, uint wrapThres = 0)
     {
         var buffer = ArrayPool<Vertex>.Shared.Rent(text.Length * 6); 
-        var bounds = new FloatRect(pos, (0,0));
         ref var l = ref TextLayers[textLayer];
+        bounds = new FloatRect(pos, (0,0));
         
         pos.Y += l.FontSize;
         
@@ -226,8 +226,14 @@ public class KTextHandler
                 pos.X = bounds.Position.X;
                 pos.Y += l.FontSize + lnSpacing;
             }
+
+            if (pos.X - bounds.Position.X > bounds.Width)
+            {
+                bounds.Size.X = pos.X - bounds.Position.X;
+            }
         }
 
+        bounds.Size.Y = pos.Y - bounds.Position.Y;
         pos.Y -= l.FontSize;
 
         DrawBuffer(buffer, (uint)text.Length * 6, 0);
@@ -235,9 +241,10 @@ public class KTextHandler
         ArrayPool<Vertex>.Shared.Return(buffer);
     }
 
-    public void DrawText(KText text, Vector2f pos, int textLayer, uint wrapThres = 0)
+    public void DrawText(in KText text, Vector2f pos, int textLayer, out FloatRect bounds, uint wrapThres = 0)
     {
-        DrawText(text.TextStr, pos, textLayer, text.Color);
+        DrawText(text.TextStr, pos, textLayer, text.Color, out FloatRect b);
+        bounds = b;
     }
 }
 

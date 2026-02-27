@@ -45,10 +45,11 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
     public KInputManager(RenderWindow window)
     {
         _activeKeyCount = 0;
-        MouseStates = 0;
-        PrevMouseStates = 0;
         _activeKeys = new Keyboard.Key[Keyboard.KeyCount];
         _keyStates = new KKeyStates[Keyboard.KeyCount];
+        
+        MouseStates = 0;
+        PrevMouseStates = 0;
         Array.Fill(_keyStates, KKeyStates.NONE);
         
         MousePosX = 0;
@@ -57,7 +58,7 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
         StringBuilder = new(128);
 
         Window = window;
-        Window.SetKeyRepeatEnabled(false);
+        //Window.SetKeyRepeatEnabled(false);
         Window.MouseMoved += MouseMoved;
         Window.MouseButtonPressed += MouseButtonPressed;
         Window.MouseButtonReleased += MouseButtonReleased;
@@ -121,6 +122,11 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
     {
         _readText = true;
         StringBuilder.Clear();
+    }
+
+    public string ReadText()
+    {
+        return StringBuilder.ToString();
     }
 
     public string StopTextRead()
@@ -212,6 +218,10 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
     private void KeyPressed(object? obj, KeyEventArgs args)
     {
         if (args.Code == Keyboard.Key.Unknown) return;
+        if (args.Code == Keyboard.Key.Backspace && StringBuilder.Length > 0)
+        {
+            StringBuilder.Remove(StringBuilder.Length - 1, 1);
+        }
 
         ref var states = ref _keyStates[(int)args.Code];
         
@@ -242,7 +252,18 @@ public class KInputManager //Sanitizes inputs, reduces boilerplate, & reduces de
 
     private void TextEntered(object? obj, TextEventArgs args)
     {
-        if (_readText) StringBuilder.Append(args.Unicode);
+        if (!_readText) return;
+        var text = args.Unicode;
+
+        switch(args.Unicode)
+        {
+            case "\b":
+                break;
+
+            default:
+                StringBuilder.Append(text);
+                break;
+        } 
     }
 
     private void LostFocus(object? obj, EventArgs args)

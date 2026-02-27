@@ -41,12 +41,11 @@ public class KProgram
     public enum KLayers : int
     {
         //General layers
-        SCREEN = -1,
-        WORLD = 0,
+        DEFAULT = 0,
         LINE = 1,
 
         //Text layers
-        TEXT = 0, 
+        TEXT_DEFAULT = 0, 
     }
 
     public const uint FRAME_RATE = 60;
@@ -81,7 +80,7 @@ public class KProgram
         Renderer = new(Window, Buffer);
         InputManager = new(Window);
         Editor = new(Renderer, InputManager);
-        GameManager = new();
+        GameManager = new(Renderer, InputManager);
     }
 
     public static void Main()

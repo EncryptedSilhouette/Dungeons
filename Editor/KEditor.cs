@@ -22,7 +22,7 @@ public class KEditor
 
     public const int TILE_SIZE = 4;
         
-    public KButton Button;
+    public KInputField InputField;
     public KTexturePalette Palette;
     public KRenderManager Renderer;
     public KInputManager InputManager;
@@ -34,15 +34,16 @@ public class KEditor
         Renderer = renderer;
         InputManager = inputManager;
 
-        Button = new KButton(new KSprite
-        {
-            Rotation = 0.0f,
-            Color = new(200, 200, 200),
-            Rotocenter = (0, 0),
-            Bounds = new((16, 16), (80, 40)),
-            TextureBounds = new(),
-            Frames = []
-        }, new("Test", Color.White, 0, size: 14));
+        InputField = new(new KButton(
+            new KSprite
+            {
+                Rotation = 0.0f,
+                Color = new(200, 200, 200),
+                Rotocenter = (0, 0),
+                Bounds = new((16, 16), (80, 40)),
+                TextureBounds = new(),
+                Frames = []
+            }, new("Test", Color.White, 0, size: 14)));
 
         KTileMap[] tileMaps =
         [
@@ -72,7 +73,7 @@ public class KEditor
     public void Update(uint currentFrame)
     {
         //value to downscale mouse/screen coords to layer's coords.
-        var downScale = 1 / KProgram.DrawLayers[(int)KProgram.KLayers.WORLD].GetScaleXRelativeTo(KProgram.Window.Size.X);
+        var downScale = 1 / KProgram.DrawLayers[(int)KProgram.KLayers.DEFAULT].GetScaleXRelativeTo(KProgram.Window.Size.X);
 
         if (InputManager.IsKeyPressed(Keyboard.Key.Q)) Palette.Enabled = !Palette.Enabled; 
         
@@ -81,25 +82,26 @@ public class KEditor
             Palette.Update(InputManager);
         }
 
-        if (!Palette.Enabled) Button.Update(InputManager, InputManager.GetMousePosition());
+        InputField.Update(InputManager);
     }
 
     public void FrameUpdate(uint currentFrame, KRenderManager renderer)
     {
         if (Palette.Enabled) Palette.FrameUpdate(renderer, InputManager, 
-            (int)KProgram.KLayers.WORLD, 
+            (int)KProgram.KLayers.DEFAULT, 
             (int)KProgram.KLayers.LINE);
 
         if (!Palette.Enabled) 
         {
-            Button.FrameUpdate(renderer, (byte)KProgram.KLayers.WORLD, (byte)KProgram.KLayers.TEXT);
             renderer.TextHandler.DrawText(
 @"Help:
 Q toggle palette,
 E: toggle texture
 L: toggle layer
 F: next"
-                ,(16, 64), 0, Color.White);
+                ,(16, 64), 0, Color.White, out FloatRect b);
         }
+
+        InputField.FrameUpdate(Renderer, (byte)KProgram.KLayers.TEXT_DEFAULT);
     }
 }
