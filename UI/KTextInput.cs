@@ -58,8 +58,8 @@ public struct KInputField
     {
         renderer.TextHandler.DrawText(InputBox.Text, InputBox.Sprite.Bounds.Position, textLayer, out FloatRect b);
 
-        if (b.Width > MinWidth) InputBox.Sprite.Bounds.Size.X = b.Width;
-        if (b.Height > MinHeight) InputBox.Sprite.Bounds.Size.Y = b.Height;
+        InputBox.Sprite.Bounds.Size.X = b.Width > MinWidth ? b.Width : MinWidth;
+        InputBox.Sprite.Bounds.Size.Y = b.Height > MinHeight ? b.Height : MinHeight;
 
         var color = InputBox.States.HasFlag(KButtonState.HOVER) || HasFocus ? 
             InputBox.HeldColor :
