@@ -12,6 +12,8 @@ public class KTexturePalette
         PAINT,
     }
 
+    private bool _textureUpdated;
+
     public bool Enabled;
     public bool ShowPalette;
     public bool ShowGrid;
@@ -28,7 +30,7 @@ public class KTexturePalette
 
     public KTexturePalette(KTileMap[] layers)
     {
-        TileLayers = layers;
+        _textureUpdated = false;
 
         ShowPalette = Enabled = false;
         ActiveTileMap = 0;
@@ -38,6 +40,7 @@ public class KTexturePalette
         SelectedTile = new();
         RenderTexture = new((640, 480));
         Texture = RenderTexture.Texture;
+        TileLayers = layers;
     
         PaletteUpdated += (p) => p.Texture = p.RenderTexture.Texture;
     }
@@ -50,29 +53,10 @@ public class KTexturePalette
         RenderTexture.Display();
     }
 
-    public void Update(KInputManager input)
-    {
-        //Enables/disables parts of the editor
-        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.L))
-        {
-            TileLayers[ActiveTileMap].Enabled = !TileLayers[ActiveTileMap].Enabled;
-        }
-        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.F))
-        {
-            SwitchToLayer((ActiveTileMap + 1) % TileLayers.Length);
-        }
-        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.E)) 
-        {
-            ShowPalette = !ShowPalette;
-            CurrentTool = ShowPalette? 
-                KPaletteTools.EYE_DROPPER :
-                KPaletteTools.PAINT;
-        }
-        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.G)) ShowGrid = !ShowGrid; 
-    }
-
     public void FrameUpdate(KRenderManager renderer,  KInputManager input, int layer, int lineLayer)
     {
+        HandleInput(input);
+
         ref var l = ref renderer.DrawLayers[layer];
         ref var tmap = ref TileLayers[ActiveTileMap];
         var downScale = 1 / l.GetScaleXRelativeTo(KProgram.Window.Size.X);
@@ -117,6 +101,7 @@ public class KTexturePalette
             }
         }
 
+        //Draw TileMaps.
         for (int i = 0; i < TileLayers.Length; i++)
         {
             TileLayers[i].FrameUpdate(renderer, layer);
@@ -132,17 +117,19 @@ public class KTexturePalette
 
         if (ShowGrid) tmap.Grid.FrameUpdate(renderer, lineLayer);
 
+        //Highlight on tile.
         renderer.DrawRect(
             new FloatRect(tmap.Grid.IndexToCoords(index), tmap.Grid.CellSize), 
             new(255, 255, 0, 150), layer);
 
-        renderer.DrawLine((1,1), (renderer.ScreenSize.X, 1), 
+        //Draw boarder.
+        renderer.DrawLine((1, 1), (renderer.ScreenSize.X, 1), 
             new Color(200, 255, 0), lineLayer);
-        renderer.DrawLine((renderer.ScreenSize.X,1), (Vector2f)renderer.ScreenSize, 
+        renderer.DrawLine((renderer.ScreenSize.X, 1), (Vector2f)renderer.ScreenSize, 
             new Color(200, 255, 0), lineLayer);
         renderer.DrawLine((Vector2f)renderer.ScreenSize, (1, renderer.ScreenSize.Y), 
             new Color(200, 255, 0), lineLayer);
-        renderer.DrawLine((0, renderer.ScreenSize.Y), (1,1), 
+        renderer.DrawLine((0, renderer.ScreenSize.Y), (1, 1), 
             new Color(200, 255, 0), lineLayer);
     }
 
@@ -155,10 +142,49 @@ public class KTexturePalette
     public void DrawBuffer(Vertex[] vertices, uint vCount, PrimitiveType primitive) => 
         DrawBuffer(vertices, vCount, primitive, new(Texture)); 
 
-    public void Clear() => RenderTexture.Clear(BackgroundColor);
-
     public void SwitchToLayer(int layer)
     {
         ActiveTileMap = layer;  
+    }
+
+    public void Clear() => RenderTexture.Clear(BackgroundColor);
+
+    private void HandleInput(KInputManager input)
+    {
+        //Enables/disables parts of the editor
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.L))
+        {
+            TileLayers[ActiveTileMap].Enabled = !TileLayers[ActiveTileMap].Enabled;
+        }
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.F))
+        {
+            SwitchToLayer((ActiveTileMap + 1) % TileLayers.Length);
+        }
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.E)) 
+        {
+            ShowPalette = !ShowPalette;
+            CurrentTool = ShowPalette? 
+                KPaletteTools.EYE_DROPPER :
+                KPaletteTools.PAINT;
+        }
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.G)) ShowGrid = !ShowGrid; 
+
+        if (input.IsKeyPressed(SFML.Window.Keyboard.Key.Enter))
+        {
+            Export();
+        }
+    }
+
+    private void Export()
+    {
+        RenderTexture.Clear();
+        for (int i = 0; i < TileLayers.Length; i++)
+        {
+            ref var tm = ref TileLayers[i];
+            RenderTexture.Draw(tm.Buffer, PrimitiveType.Triangles, KProgram.Renderer.DrawLayers[0].States);  
+        }
+        RenderTexture.Display();  
+        Directory.CreateDirectory("out");
+        var t = RenderTexture.Texture.CopyToImage().SaveToFile("out/tilemap.png");
     }
 }

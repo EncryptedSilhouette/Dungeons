@@ -77,12 +77,7 @@ public class KEditor
 
         if (InputManager.IsKeyPressed(Keyboard.Key.Q)) Palette.Enabled = !Palette.Enabled; 
         
-        if (Palette.Enabled)
-        {
-            Palette.Update(InputManager);
-        }
-
-        InputField.Update(InputManager);
+        //InputField.Update(InputManager);
     }
 
     public void FrameUpdate(uint currentFrame, KRenderManager renderer)
@@ -102,6 +97,6 @@ F: next"
                 ,(16, 64), 0, Color.White, out FloatRect b);
         }
 
-        InputField.FrameUpdate(Renderer, (byte)KProgram.KLayers.TEXT_DEFAULT);
+        //InputField.FrameUpdate(Renderer, (byte)KProgram.KLayers.TEXT_DEFAULT);
     }
 }
