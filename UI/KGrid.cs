@@ -6,30 +6,28 @@ public struct KGrid
 {
     public int Columns;
     public int Rows;
-    public int CellWidth;
-    public int CellHeight;
     public Color LineColor;
+    public Vector2i CellSize;
     public Vector2f Position;
     public uint[] Cells;
 
     public int CellCount => Columns * Rows;
-    public Vector2f CellSize => new(CellWidth, CellHeight);
     
     public KGrid()
     {
-        Rows = Columns = CellWidth = CellHeight = 0;
+        Rows = Columns = 0;
+        CellSize = new();
         LineColor = Color.White;
         Cells = [];
     }
 
-    public KGrid(int columns, int rows, int x, int y, int cellWidth, int cellHeight)
+    public KGrid(int columns, int rows, Vector2f position, Vector2i size)
     {
         Columns = columns;
         Rows = rows;
         LineColor = Color.White;
-        CellWidth = cellWidth;
-        CellHeight = cellHeight;
-        Position = (x, y);
+        CellSize = size;
+        Position = position;
         Cells = new uint[Rows * Columns];
         Array.Fill<uint>(Cells, 0);
     }
