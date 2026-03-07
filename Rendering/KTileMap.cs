@@ -28,12 +28,12 @@ public struct KTileMap
             tRect = TileSet[Grid.Cells[i]];
 
             Buffer[i * 6] = new(pos, color, tRect.Position);
-            Buffer[i * 6 + 1] = new((pos.X + Grid.CellWidth, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
-            Buffer[i * 6 + 2] = new((pos.X, pos.Y + Grid.CellHeight), color, (tRect.Left, tRect.Top + tRect.Height));
+            Buffer[i * 6 + 1] = new((pos.X + Grid.CellSize.X, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
+            Buffer[i * 6 + 2] = new((pos.X, pos.Y + Grid.CellSize.Y), color, (tRect.Left, tRect.Top + tRect.Height));
 
-            Buffer[i * 6 + 3] = new((pos.X + Grid.CellWidth, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
-            Buffer[i * 6 + 4] = new(pos + (Grid.CellWidth, Grid.CellHeight), color, tRect.Position + tRect.Size);   
-            Buffer[i * 6 + 5] = new((pos.X, pos.Y + Grid.CellHeight), color, (tRect.Left, tRect.Top + tRect.Height));   
+            Buffer[i * 6 + 3] = new((pos.X + Grid.CellSize.X, pos.Y), color, (tRect.Left + tRect.Width, tRect.Top));   
+            Buffer[i * 6 + 4] = new(pos + (Grid.CellSize.X, Grid.CellSize.Y), color, tRect.Position + tRect.Size);   
+            Buffer[i * 6 + 5] = new((pos.X, pos.Y + Grid.CellSize.Y), color, (tRect.Left, tRect.Top + tRect.Height));   
         }
         return Buffer;
     }

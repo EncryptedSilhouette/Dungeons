@@ -56,8 +56,8 @@ public struct KGameChunck
     public KGrid Tiles;
     
     public FloatRect Bounds => new(Tiles.Position, 
-        (Tiles.CellWidth * Tiles.Columns,
-        Tiles.CellHeight * Tiles.Rows));
+        (Tiles.CellSize.X * Tiles.Columns,
+        Tiles.CellSize.Y * Tiles.Rows));
 
     public KGameChunck()
     {

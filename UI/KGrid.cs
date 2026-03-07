@@ -13,12 +13,13 @@ public struct KGrid
 
     public int CellCount => Columns * Rows;
     
-    public KGrid()
+    public KGrid(int columns, int rows)
     {
-        Rows = Columns = 0;
+        Columns = columns;
+        Rows = rows;
         CellSize = new();
         LineColor = Color.White;
-        Cells = [];
+        Cells = new uint[columns * rows];
     }
 
     public KGrid(int columns, int rows, Vector2f position, Vector2i size)
@@ -39,14 +40,14 @@ public struct KGrid
 
         for (int i = 0; i < Rows; i++)
         {
-            buffer[vCount] = new((Position.X, Position.Y + i * CellWidth), LineColor);
-            buffer[vCount + 1] = new((Position.X + Columns * CellWidth, Position.Y + i * CellHeight), LineColor);
+            buffer[vCount] = new((Position.X, Position.Y + i * CellSize.X), LineColor);
+            buffer[vCount + 1] = new((Position.X + Columns * CellSize.X, Position.Y + i * CellSize.Y), LineColor);
             vCount += 2;
         }
         for (int i = 0; i < Columns; i++)
         {
-            buffer[vCount] = new((Position.X + i * CellWidth, Position.Y), LineColor);
-            buffer[vCount + 1] = new((Position.X + i * CellWidth, Position.Y + Rows * CellHeight), LineColor);
+            buffer[vCount] = new((Position.X + i * CellSize.X, Position.Y), LineColor);
+            buffer[vCount + 1] = new((Position.X + i * CellSize.X, Position.Y + Rows * CellSize.Y), LineColor);
             vCount += 2;
         }
 
@@ -66,8 +67,8 @@ public struct KGrid
     public bool CoordsToIndex(Vector2f pos, out int index, float scale = 1)
     {
         pos -= Position * scale;
-        int column = (int)(pos.X / CellWidth * scale);
-        int row = (int)(pos.Y / CellHeight * scale);
+        int column = (int)(pos.X / CellSize.X * scale);
+        int row = (int)(pos.Y / CellSize.Y * scale);
 
         PositionToIndex(column, row, out index);
         
@@ -79,7 +80,7 @@ public struct KGrid
 
     public Vector2f IndexToCoords(int index, float scale = 1) => new()
     {
-        X = Position.X + (int)(index % Columns) * CellWidth * scale,
-        Y = Position.Y + (int)(index / Columns) * CellHeight * scale,
+        X = Position.X + (int)(index % Columns) * CellSize.X * scale,
+        Y = Position.Y + (int)(index / Columns) * CellSize.Y * scale,
     };
 }
