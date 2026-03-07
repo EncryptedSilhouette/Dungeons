@@ -49,7 +49,7 @@ public enum KChunkPriority
     HIGH,
 }
 
-public struct KGameChuck
+public struct KGameChunck
 {
     public bool Initialized;
     public KChunkPriority Priority;
@@ -59,7 +59,7 @@ public struct KGameChuck
         (Tiles.CellWidth * Tiles.Columns,
         Tiles.CellHeight * Tiles.Rows));
 
-    public KGameChuck()
+    public KGameChunck()
     {
         Initialized = false;
     }
@@ -79,7 +79,7 @@ public struct KGameChuck
 public class KGameWorld
 {
     public KPlayer Player;
-    public KGameChuck[] ActiveChunks;
+    public KGameChunck[] ActiveChunks;
 
     public KGameWorld(KPlayer player)
     {
@@ -110,9 +110,9 @@ public class KGameWorld
         }
     }
 
-    public void CreateChuck(Vector2f Position)
+    public void CreateChunck (Vector2f Position)
     {
-        var chunk = new KGameChuck
+        var chunk = new KGameChunck
         {
             Priority = KChunkPriority.HIGH,
             Tiles = new KGrid(
@@ -124,16 +124,16 @@ public class KGameWorld
         var cells = chunk.Tiles.Cells;
         for (int i = 0; i < cells.Length; i++)
         {
-            
+            cells[i] = 0;
         }
     }
 
-    public void SaveChuck()
+    public void SaveChunck()
     {
         
     }
 
-    public void UnloadChuck()
+    public void UnloadChunck()
     {
         
     }
