@@ -81,6 +81,7 @@ public struct KGameChunck
     public uint Y;
     public uint Width;
     public uint Height;
+    public KBufferRegion Region;
     
     public KChunkRegion(uint x, uint y, uint width, uint height)
     {
@@ -93,11 +94,7 @@ public struct KGameChunck
 
 public class KChunkManager
 {
-    public uint HEAP_SIZE = 65_536;
-    public KBufferRegion H0;
-    public KBufferRegion H1;
-    public KBufferRegion H2;
-    public KBufferRegion H3;
+    
 
     public KGameChunck[] ChunkHeap;
 
@@ -106,20 +103,7 @@ public class KChunkManager
 
     public KChunkManager()
     {
-        uint offset = 0;
-        H0 = new KBufferRegion(offset, HEAP_SIZE / 4);
-        offset += HEAP_SIZE / 4;
-        H1 = new KBufferRegion(offset, HEAP_SIZE / 4);
-        offset += HEAP_SIZE / 4;
-        H2 = new KBufferRegion(offset, HEAP_SIZE / 4);
-        offset += HEAP_SIZE / 4;
-        H3 = new KBufferRegion(offset, HEAP_SIZE / 4);
-     
-        ChunkHeap = new KGameChunck[HEAP_SIZE];
-        Array.Fill(ChunkHeap, new KGameChunck
-        {
-            Initialized = false,
-        });
+        
     }
 
     public void LoadChunk(ulong handle)
@@ -175,3 +159,24 @@ public class KWorldgenerator()
 {
    
 }
+
+//public struct KHeap<T>
+//{
+//    public int HEAP_SIZE = 128;
+//    public T[] Contents;
+
+//    public KHeap(int size = HEAP_SIZE)
+//    {
+//        Contents = new T[HEAP_SIZE];
+//    }
+
+//    public KBufferRegion Rent(KBufferRegion region, int amount)
+//    {
+//        for (uint i = region.Offset; i < (region.Offset + region.Capacity); i++)
+//        {
+//            if (Contents[i].Initialized) region.Offset = i + 1;
+//            else if ((i - region.Offset) == amount) return region;
+//        }
+//        return region;
+//    }
+//}
