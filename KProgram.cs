@@ -13,6 +13,13 @@ public struct KBufferRegion
     public uint Offset;
     public uint Count;
     public uint Capacity;
+
+    public KBufferRegion(uint offset, uint capacity)
+    {
+        Offset = offset;
+        Count = 0;
+        Capacity = capacity;
+    }
 }
 
 public struct KDrawLayer

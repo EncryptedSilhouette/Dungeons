@@ -1,4 +1,7 @@
-using SFML.Graphics;
+using System.Net.NetworkInformation;
+using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using SFML.System;
 
 public class KGameManager
@@ -40,7 +43,7 @@ public class KGameManager
     }
 }
 
-public enum KChunkPriority
+public enum KChunkPriority : byte
 {
     NONE,
     TIMED_OUT,    
@@ -51,25 +54,85 @@ public enum KChunkPriority
 
 public struct KGameChunck
 {
+    public static ulong GetHandle(uint x, uint y) => x + y * uint.MaxValue;
+    public static Vector2u GetPosition(ulong handle) => new Vector2u
+    {
+        X = (uint)(handle % uint.MaxValue),
+        Y = (uint)(handle / uint.MaxValue),
+    };
+
+    public ulong Handle;
     public bool Initialized;
     public KChunkPriority Priority;
-    public KGrid Tiles;
-    
-    public FloatRect Bounds => new(Tiles.Position, 
-        (Tiles.CellWidth * Tiles.Columns,
-        Tiles.CellHeight * Tiles.Rows));
 
-    public KGameChunck()
+    public Vector2u Position => GetPosition(Handle);
+
+    public KGameChunck(ulong handle)
     {
+        Handle = handle;
         Initialized = false;
+        Priority = KChunkPriority.NONE;
+    }
+}
+
+ public struct KChunkRegion
+{
+    public uint X;
+    public uint Y;
+    public uint Width;
+    public uint Height;
+    
+    public KChunkRegion(uint x, uint y, uint width, uint height)
+    {
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+    }
+}
+
+public class KChunkManager
+{
+    public uint HEAP_SIZE = 65_536;
+    public KBufferRegion H0;
+    public KBufferRegion H1;
+    public KBufferRegion H2;
+    public KBufferRegion H3;
+
+    public KGameChunck[] ChunkHeap;
+
+    //public Thread HeapThread;
+    //public Thread LoadingThread;
+
+    public KChunkManager()
+    {
+        uint offset = 0;
+        H0 = new KBufferRegion(offset, HEAP_SIZE / 4);
+        offset += HEAP_SIZE / 4;
+        H1 = new KBufferRegion(offset, HEAP_SIZE / 4);
+        offset += HEAP_SIZE / 4;
+        H2 = new KBufferRegion(offset, HEAP_SIZE / 4);
+        offset += HEAP_SIZE / 4;
+        H3 = new KBufferRegion(offset, HEAP_SIZE / 4);
+     
+        ChunkHeap = new KGameChunck[HEAP_SIZE];
+        Array.Fill(ChunkHeap, new KGameChunck
+        {
+            Initialized = false,
+        });
     }
 
-    public void Update()
+    public void LoadChunk(ulong handle)
     {
         
     }
 
-    public void FrameUpdate()
+    public void LoadChunkFromFile()
+    {
+        
+    }
+
+    public void LoadChunkRegion(in KChunkRegion region)
     {
         
     }
@@ -79,12 +142,12 @@ public struct KGameChunck
 public class KGameWorld
 {
     public KPlayer Player;
-    public KGameChunck[] ActiveChunks;
+    public KChunkManager ChunkManager;
 
     public KGameWorld(KPlayer player)
     {
         Player = player;
-        ActiveChunks = [];
+        ChunkManager = new();
     }   
 
     public void Init()
@@ -94,47 +157,21 @@ public class KGameWorld
 
     public void Update(KInputManager input)
     {
-        Player.Update(input);
-        for (int i = 0; i < ActiveChunks.Length; i++)
-        {
-            ActiveChunks[i].Update();
-        }
+        
     }
 
     public void FrameUpdate(KRenderManager renderer)
     {
-        Player.FrameUpdate(renderer, (int)KProgram.KLayers.DEFAULT);
-        for (int i = 0; i < ActiveChunks.Length; i++)
-        {
-            ActiveChunks[i].FrameUpdate();
-        }
-    }
-
-    public void CreateChunck (Vector2f Position)
-    {
-        var chunk = new KGameChunck
-        {
-            Priority = KChunkPriority.HIGH,
-            Tiles = new KGrid(
-                16, 16,
-                Position,
-                new(4,4))
-        };
-
-        var cells = chunk.Tiles.Cells;
-        for (int i = 0; i < cells.Length; i++)
-        {
-            cells[i] = 0;
-        }
-    }
-
-    public void SaveChunck()
-    {
         
     }
 
-    public void UnloadChunck()
+    public void Generate(uint x, uint y, uint width, uint height)
     {
-        
+        KChunkRegion chunkRegion = new(x, y, width, height);
     }
+}
+
+public class KWorldgenerator()
+{
+   
 }
