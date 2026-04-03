@@ -1,159 +1,121 @@
-using System.Runtime.InteropServices.Marshalling;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.VisualBasic;
 using SFML.Graphics;
 using SFML.System;
 
 public class KGameManager
 {
     public KPlayer Player;
-    public KGameWorld GameWorld;
     public KInputManager InputManager;
-    public KRenderManager Renderer; 
+    public KRenderManager Renderer;
+
+    public Dictionary<ulong, KGameChunk> ChunkCache;
 
     public KGameManager(KRenderManager renderer, KInputManager inputManager)
     {
         Player = new(this);
-        GameWorld = new(Player);
+        ChunkCache = new();
         Renderer = renderer;
         InputManager = inputManager;
     }
 
-    public void Update()
+    public void GenerateSpawn()
     {
+
     }
 
-    public void FrameUpdate()
+    public void GenerateChunks(Vector2i position, uint columns, uint rows)
     {
-    }
+        var chunks = new KGameChunk[columns * rows];
 
-    public void GenerateWorld()
-    {
-        
-    }
-
-    public void LoadWorld()
-    {
-        
-    }
-
-    public void SaveWorld()
-    {
-        
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < columns; j++)
+            {
+                chunks[i] = new KGameChunk(position + (j, i))
+                {
+                    Initialized = true,
+                    Priority = KChunkPriority.HIGH
+                };
+            }
+        }
     }
 }
 
 public enum KChunkPriority : byte
 {
     NONE,
-    TIMED_OUT,    
+    TIMED_OUT,
     LOW,
     MEDIUM,
     HIGH,
 }
 
-public struct KGameChunk
+public class KGameChunk
 {
     public const int CHUNK_SIZE = 16;
 
     #region Static
-    public static ulong GetHandle(long x, long y)
-    {
-        //removes negative value range to fit uint32 range.
-        x -= int.MinValue;
-        y -= int.MinValue;
-        //Converts from grid coords to handle.
-        return (ulong)x + (ulong)y * uint.MaxValue;
-    }
+    public static long GetHandle(Vector2i postion) => postion.X + postion.Y * uint.MaxValue;
 
-    public static Vector2i GetPosition(ulong handle)
+    public static Vector2i GetPosition(long handle) => new Vector2i
     {
-        //Convert to world coords.
-        long x = (long)(handle % uint.MaxValue);
-        long y = (long)(handle / uint.MaxValue);
-        //Add the negative value range to fit to sint32 range.
-        x = x + int.MinValue;
-        y = y + int.MinValue;
-        //should cast safely x_x.
-        return new((int)x, (int)y);
-    }
+        X = (int)(handle % uint.MaxValue),
+        Y = (int)(handle / uint.MaxValue),
+    };
     #endregion
 
-    public ulong Handle;
+    public long Handle;
     public bool Initialized;
     public KChunkPriority Priority;
+    public KWorldTile[] Tiles;
+
     public Vector2i Position => GetPosition(Handle);
 
-    public KGameChunk(ulong handle)
+    public KGameChunk(long handle)
     {
         Handle = handle;
         Initialized = false;
         Priority = KChunkPriority.NONE;
+        Tiles = new KWorldTile[CHUNK_SIZE * CHUNK_SIZE];
+        Array.Fill(Tiles, new KWorldTile
+        {
+            Ground = new KTile
+            {
+                Bounds = new(),
+                Sprite = new(),
+                Type = KTileType.NONE,
+            },
+            Wall = new KTile
+            {
+                Bounds = new(),
+                Sprite = new(),
+                Type = KTileType.NONE,
+            },
+        });
     }
 
-    public KGameChunk(int x, int y)
-    {
-        Handle = GetHandle(x, y);
-        Initialized = false;
-        Priority = KChunkPriority.NONE;
-    }
+    public KGameChunk(Vector2i position) : this(GetHandle(position)) { }
 }
 
-public struct KChunkRegion
+public enum KTileType
 {
-    public KBufferRegion Region; 
-    public IntRect Area;
-    public KChunkHandler ChunkHandler;
-    public Span<KGameChunk> Chunks => ChunkHandler.ChunkBuffer.AsSpan((int)Region.Offset, (int)Region.Capacity);
-
-    public KChunkRegion(KChunkHandler handler, KBufferRegion region, Vector2i pos, Vector2i size)
-    {
-        Region = region;
-        Area = new(pos, size);
-        ChunkHandler = handler;
-    }
-
-    public bool ContainsChunk(ulong handle) => Area.Contains(KGameChunk.GetPosition(handle));
-    public bool ContainsChunk(Vector2i point) => Area.Contains(point);
+    NONE,
+    VOID,
+    GROUND,
+    EDGE,
+    WALL,
 }
 
-public class KChunkHandler
+public struct KTile
 {
-    public Dictionary<ulong, KGameChunk> chunkCache = new();
+    public FloatRect Bounds;
+    public FloatRect Sprite;
+    public KTileType Type;
 }
 
-public struct KPlayerChunkCluster
+public struct KWorldTile
 {
-    public int LoadDist;
-    public int SimDist;
-
-    public Action LoadChunkRegion;
-
+    public KTile Ground;
+    public KTile Wall;
 }
 
-public class KGameWorld
-{
-    public KPlayer Player;
 
-
-    public KGameWorld(KPlayer player)
-    {
-        Player = player;
-
-    }   
-
-    public void Init()
-    {
-        
-    }
-
-    public void Update(KInputManager input)
-    {
-        
-    }
-
-    public void FrameUpdate(KRenderManager renderer)
-    {
-        
-    }
-}

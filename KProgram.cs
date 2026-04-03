@@ -62,7 +62,7 @@ public class KProgram
     public static KProgramState State;
     public static RenderWindow Window;
     public static KRenderManager Renderer;
-    public static KEditor Editor;
+    //public static KEditor Editor;
     public static KInputManager InputManager;
     public static KGameManager GameManager;
     public static VertexBuffer Buffer;
@@ -86,7 +86,7 @@ public class KProgram
         
         Renderer = new(Window, Buffer);
         InputManager = new(Window);
-        Editor = new(Renderer, InputManager);
+        //Editor = new(Renderer, InputManager);
         GameManager = new(Renderer, InputManager);
     }
 
@@ -163,7 +163,7 @@ public class KProgram
         ];
 
         Renderer.Init(BufferRegions[2], DrawLayers, TextLayers);
-        Editor.Init(Renderer, Atlases[0]);
+        //Editor.Init(Renderer, Atlases[0]);
     }
 
     public static void Start()
@@ -191,12 +191,12 @@ public class KProgram
 
     private static void Update(uint currentFrame)
     {
-        Editor.Update(currentFrame);
+        //Editor.Update(currentFrame);
     }
 
     private static void FrameUpdate(uint currentFrame)
     {
-        Editor.FrameUpdate(currentFrame, Renderer);
+        //Editor.FrameUpdate(currentFrame, Renderer);
         Renderer.FrameUpdate();
         InputManager.Update(); //Call last for proper input.
     }

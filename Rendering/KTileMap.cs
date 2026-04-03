@@ -1,3 +1,4 @@
+#if false
 using SFML.Graphics;
 
 public struct KTileMap
@@ -44,3 +45,4 @@ public struct KTileMap
         renderer.DrawBuffer(Buffer, (uint)Buffer.Length, layer);
     }
 }
+#endif

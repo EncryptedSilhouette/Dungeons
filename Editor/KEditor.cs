@@ -1,3 +1,4 @@
+#if false
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
@@ -100,3 +101,4 @@ F: next"
         //InputField.FrameUpdate(Renderer, (byte)KProgram.KLayers.TEXT_DEFAULT);
     }
 }
+#endif

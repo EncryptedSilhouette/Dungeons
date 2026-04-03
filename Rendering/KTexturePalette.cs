@@ -1,3 +1,4 @@
+#if false
 using SFML.Graphics;
 using SFML.System;
 
@@ -188,3 +189,4 @@ public class KTexturePalette
         var t = RenderTexture.Texture.CopyToImage().SaveToFile("out/tilemap.png");
     }
 }
+#endif
