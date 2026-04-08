@@ -79,6 +79,31 @@ public struct KSprite
     }
 }
 
+public struct KRenderLayer
+{
+    public int AtlasHandle;
+    public FloatRect Bounds;
+    public PrimitiveType Primitive;
+    public RenderStates States;
+    public KBufferRegion Region;
+    public RenderTexture RenderTexture;
+    public Color BackgroundColor;
+    public bool Upscale;
+    public Texture Texture => RenderTexture.Texture;
+
+    public KRenderLayer(RenderTexture renderTexture, FloatRect bounds, int atlasHandle)
+    {
+        RenderTexture = renderTexture;
+        Bounds = bounds;
+        AtlasHandle = atlasHandle;
+    }
+
+    public Vector2f GetScaleRelativeTo(Vector2f otherSize) => 
+        new(otherSize.X / Bounds.Size.X, otherSize.Y / Bounds.Size.Y);
+    public float GetScaleXRelativeTo(float width) => width / Bounds.Size.X;
+    public float GetScaleYRelativeTo(float height) => height / Bounds.Size.Y;
+}
+
 public class KRenderManager
 {
     public const int SCREEN_LAYER = -1;
@@ -91,61 +116,94 @@ public class KRenderManager
     public RenderWindow Window;
     public VertexBuffer VertexBuffer;
     public KTextHandler TextHandler;
-    public KDrawLayer[] DrawLayers;
+    public KRenderLayer[] RenderLayers;
 
-    public float aspect => Window.Size.Y / Window.Size.X;
+    //public float aspect => Window.Size.Y / Window.Size.X;
     public Vector2u ScreenSize => Window.Size;
     public Vector2u Center => Window.Size / 2;
 
     public KRenderManager(RenderWindow window, VertexBuffer buffer)
     {
         _view = window.DefaultView;
-        _drawBuffer = new Vertex[6];
+        _drawBuffer = new Vertex[128];
 
         States = RenderStates.Default;
         Window = window;
         TextHandler = new(this);
         VertexBuffer = buffer;
-        DrawLayers = [];
+        RenderLayers = [];
     }
 
-    public void Init(KBufferRegion screenRegion, KDrawLayer[] drawLayers, KTextLayer[] textLayers)
+    public void Init(KBufferRegion screenRegion, KRenderLayer[] drawLayers, KTextLayer[] textLayers)
     {
         ScreenRegion = screenRegion;
-        DrawLayers = drawLayers;
+        RenderLayers = drawLayers;
         TextHandler.Init(textLayers);
         Window.Resized += ResizeView;
     }
 
     public void FrameUpdate()
     {     
-        for (int i = 0; i < DrawLayers.Length; i++)
+        for (int i = 0; i < RenderLayers.Length; i++)
         {
-            DrawLayer(ref DrawLayers[i]);
+            ref var layer = ref RenderLayers[i];
+            layer.RenderTexture.Clear(layer.BackgroundColor);
+
+            if (VertexBuffer.PrimitiveType != layer.Primitive) 
+                VertexBuffer.PrimitiveType = layer.Primitive;
+            
+            VertexBuffer.Draw(layer.RenderTexture, layer.Region.Offset, layer.Region.Count, layer.States);
         }
 
-        VertexBuffer.PrimitiveType = PrimitiveType.Triangles;
-        VertexBuffer.Draw(Window, ScreenRegion.Offset, ScreenRegion.Count, States);
-        ScreenRegion.Count = 0;
-        
         TextHandler.FrameUpdate(this);
-    }
 
-    public void DrawLayer(ref KDrawLayer drawLayer)
-    {
-        var renderStates = drawLayer.States;
+        for (int i = 0; i < RenderLayers.Length; i++)
+        {
+            ref var layer = ref RenderLayers[i];
 
-        if (VertexBuffer.PrimitiveType != drawLayer.Primitive) 
-            VertexBuffer.PrimitiveType = drawLayer.Primitive;
+            layer.RenderTexture.Display();
 
-        if (drawLayer.Upscale)
-            renderStates.Transform
-                .Scale(((float)Window.Size.X / drawLayer.Size.X, 
-                        (float)Window.Size.X / drawLayer.Size.X));
+            _drawBuffer[0] = new Vertex
+            {
+                Position = (layer.Bounds.Left, layer.Bounds.Top),
+                Color = Color.White,  
+                TexCoords = (0, 0),
+            };
+            _drawBuffer[1] = new Vertex
+            {
+                Position = (layer.Bounds.Left + layer.Bounds.Width, layer.Bounds.Top),
+                Color = Color.White,  
+                TexCoords = (layer.RenderTexture.Size.X, 0),
+            };
+            _drawBuffer[2] = new Vertex
+            {
+                Position = (layer.Bounds.Left, layer.Bounds.Top + layer.Bounds.Height),
+                Color = Color.White,  
+                TexCoords = (0, layer.RenderTexture.Size.Y),
+            };
 
-        VertexBuffer.Draw(Window, drawLayer.Region.Offset, drawLayer.Region.Count, renderStates);
+            _drawBuffer[3] = new Vertex
+            {
+                Position = (layer.Bounds.Left + layer.Bounds.Width, layer.Bounds.Top),
+                Color = Color.White,  
+                TexCoords = (layer.RenderTexture.Size.X, 0),
+            };
+            _drawBuffer[4] = new Vertex
+            {
+                Position = (layer.Bounds.Left + layer.Bounds.Width, layer.Bounds.Top + layer.Bounds.Height),
+                Color = Color.White,  
+                TexCoords = (layer.RenderTexture.Size.X, layer.RenderTexture.Size.Y),
+            };
+            _drawBuffer[5] = new Vertex
+            {
+                Position = (layer.Bounds.Left, layer.Bounds.Top + layer.Bounds.Height),
+                Color = Color.White,  
+                TexCoords = (0, layer.RenderTexture.Size.Y),
+            };
+            Window.Draw(_drawBuffer, 0, 6, PrimitiveType.Triangles);
 
-        if (!drawLayer.IsStatic) drawLayer.Region.Count = 0;
+            layer.Region.Count = 0;
+        }
     }
 
     public void DrawBuffer(Vertex[] vertices, uint vCount, int layer = SCREEN_LAYER)
@@ -159,7 +217,7 @@ public class KRenderManager
         }
         else
         {
-            ref var region = ref DrawLayers[layer].Region;
+            ref var region = ref RenderLayers[layer].Region;
             if (region.Count + vCount > region.Capacity) vCount = region.Capacity - region.Count;
 
             VertexBuffer.Update(vertices, vCount, region.Offset + region.Count);

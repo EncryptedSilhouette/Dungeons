@@ -2,10 +2,16 @@
 using SFML.System;
 using SFML.Window;
 
-public struct KTextureAtlas
+public class KTextureAtlas
 {
     public Texture Texture;
     public Dictionary<string, FloatRect> Coordinates;
+
+    public KTextureAtlas(Texture texture, Dictionary<string, FloatRect> coords)
+    {
+        Texture = texture;
+        Coordinates = coords;
+    }
 }
 
 public struct KBufferRegion
@@ -22,21 +28,6 @@ public struct KBufferRegion
     }
 }
 
-public struct KDrawLayer
-{
-    public bool IsStatic;
-    public bool Upscale;
-    public Vector2f Size;
-    public PrimitiveType Primitive;
-    public RenderStates States;
-    public KBufferRegion Region;
-    public KTextureAtlas Atlas;
-    
-    public Vector2f GetScaleRelativeTo(Vector2f otherSize) => 
-        new(otherSize.X / Size.X, otherSize.Y / Size.Y);
-    public float GetScaleXRelativeTo(float width) => width / Size.X;
-    public float GetScaleYRelativeTo(float height) => height / Size.Y;
-}
 
 public class KProgram
 {
@@ -69,7 +60,7 @@ public class KProgram
     public static Font[] Fonts;
     public static KBufferRegion[] BufferRegions;
     public static KTextureAtlas[] Atlases;
-    public static KDrawLayer[] DrawLayers;
+    public static KRenderLayer[] DrawLayers;
 
     static KProgram()
     {

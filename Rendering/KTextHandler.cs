@@ -7,7 +7,7 @@ public struct KTextLayer
     public byte FontSize; 
     public Font Font;
     //public KBufferRegion StaticRegion;
-    public KDrawLayer DrawLayer;
+    public KRenderLayer DrawLayer;
 
     public KTextLayer(Vector2f size, Font font, byte fontSize, bool isStatic = false)
     {
