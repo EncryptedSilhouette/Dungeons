@@ -15,7 +15,7 @@ public class KPlayer
         Speed = 2;
         Sprite = new()
         {
-            Layer = (int)KProgram.KLayers.DEFAULT,
+            Layer = (int)KProgram.KLayers.GROUND0,
             Rotation = 0,
             Color = Color.White,
             Rotocenter = (0,0),

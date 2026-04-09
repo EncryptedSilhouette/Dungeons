@@ -38,12 +38,13 @@ public class KProgram
 
     public enum KLayers : int
     {
-        //General layers
-        DEFAULT = 0,
-        LINE = 1,
-
-        //Text layers
-        TEXT_DEFAULT = 0, 
+        GROUND0,
+        GROUND1,
+        WALL,
+        CEILING,
+        OVERLAY,
+        LINE,
+        LAYER_COUNT,
     }
 
     public const uint FRAME_RATE = 60;
@@ -72,8 +73,16 @@ public class KProgram
         Fonts = [];
         Atlases = [];
         DrawLayers = [];
-        BufferRegions = CreateBufferRegions([3_000_000, 3_000_000, 3_000_000, 3_000_000]);  
-        Buffer = new(12_000_000, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
+        BufferRegions = new KBufferRegion[(int)KLayers.LAYER_COUNT]
+        {
+            new(600_000 * (int)KLayers.GROUND0, 600_000),
+            new(600_000 * (int)KLayers.GROUND1, 600_000),
+            new(600_000 * (int)KLayers.WALL, 600_000),
+            new(600_000 * (int)KLayers.CEILING, 600_000),
+            new(600_000 * (int)KLayers.OVERLAY, 600_000),
+            new(600_000 * (int)KLayers.LINE, 600_000),
+        };
+        Buffer = new(600_000 * (int)KLayers.LAYER_COUNT, PrimitiveType.Points, VertexBuffer.UsageSpecifier.Dynamic);
         
         Renderer = new(Window, Buffer);
         InputManager = new(Window);
@@ -89,7 +98,6 @@ public class KProgram
 
     public static void LoadAndInit()
     {
-
         foreach (var filePath in Directory.EnumerateFiles("Assets"))
         {
             if (filePath is null) continue;
@@ -114,24 +122,53 @@ public class KProgram
 
         DrawLayers = 
         [
-            new() //Background Layer
+            new() //GROUND0
             {
-                IsStatic = false,
                 Upscale = true,
-                Size = (320, 240),
+                Bounds = new((0, 0), (Vector2f)Window.Size),
                 Primitive = PrimitiveType.Triangles,
-                States = new(Atlases[0].Texture),
-                Region = BufferRegions[0],
-                Atlas = Atlases[0]
+                States = RenderStates.Default,
+                Region = BufferRegions[(int)KLayers.GROUND0],
             },
-            new()
+            new() //GROUND1
             {
-                IsStatic = false,
                 Upscale = true,
-                Size = (Vector2f)Window.Size,
+                Bounds = new((0, 0), (Vector2f)Window.Size),
+                Primitive = PrimitiveType.Triangles,
+                States = RenderStates.Default,
+                Region = BufferRegions[(int)KLayers.GROUND1],
+            },
+            new() //WALL
+            {
+                Upscale = true,
+                Bounds = new((0, 0), (Vector2f)Window.Size),
+                Primitive = PrimitiveType.Triangles,
+                States = RenderStates.Default,
+                Region = BufferRegions[(int)KLayers.WALL],
+            },
+            new() //CEILING
+            {
+                Upscale = true,
+                Bounds = new((0, 0), (Vector2f)Window.Size),
+                Primitive = PrimitiveType.Triangles,
+                States = RenderStates.Default,
+                Region = BufferRegions[(int)KLayers.CEILING],
+            },
+            new() //OVERLAY
+            {
+                Upscale = true,
+                Bounds = new((0, 0), (Vector2f)Window.Size),
+                Primitive = PrimitiveType.Triangles,
+                States = RenderStates.Default,
+                Region = BufferRegions[(int)KLayers.OVERLAY],
+            },
+            new() //LINE
+            {
+                Upscale = true,
+                Bounds = new((0, 0), (Vector2f)Window.Size),
                 Primitive = PrimitiveType.Lines,
                 States = RenderStates.Default,
-                Region = BufferRegions[1],
+                Region = BufferRegions[(int)KLayers.LINE],
             },
         ];
 
@@ -143,9 +180,8 @@ public class KProgram
                 Font = Fonts[0],
                 DrawLayer = new()
                 {
-                    IsStatic = false,
                     Upscale = false,
-                    Size = (Vector2f)Window.Size,
+                    Bounds = new((0, 0), (Vector2f)Window.Size),
                     Primitive = PrimitiveType.Triangles,
                     States = new(Fonts[0].GetTexture(14)),
                     Region = BufferRegions[3],
@@ -194,11 +230,6 @@ public class KProgram
 
     public static KTextureAtlas LoadTextureAtlas(string filePath)
     {
-        KTextureAtlas atlas = new()
-        {
-            Coordinates = new(128)
-        };
-
         var atlasData = File.ReadAllLines(filePath);
 
         foreach (var line in atlasData)
